@@ -7,6 +7,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetClass", "NetClass\NetCla
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetClassClient", "NetClassClient\NetClassClient.vcxproj", "{E4C9C7A7-F548-49AB-9C1F-A9AA28B5D2BE}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{840E866A-6520-438F-8E43-174DD67AFDC8}"
+	ProjectSection(SolutionItems) = preProject
+		core.h = core.h
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64

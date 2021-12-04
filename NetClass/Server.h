@@ -9,10 +9,11 @@ class Application;
 class Server
 {
 public:
-    Server(Application* app) : _app(app) {}
-    ~Server(){};
+    Server(Application* app);
+    ~Server();
     auto run() -> void;
     auto setContinueFlag(bool flag) -> void;
+    auto setBufferSize(int index, size_t size)const -> void;
 
 private:
     Application* _app;

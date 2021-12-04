@@ -2,7 +2,6 @@
 #include <iostream>
 ///////////////////DEBUG/////////////////////////
 
-
 #include "Server.h"
 #include "Application.h"
 
@@ -32,6 +31,8 @@ const int DEFAULT_PORT = 27777;  // Á
 #endif  //  _WIN32
 
 std::vector<std::thread> clients;
+std::vector<size_t> buffer_size{};
+std::vector<bool> need_buffer_resize{};
 std::vector<std::string> in_message{};
 std::vector<bool> in_message_ready{};
 std::vector<std::string> out_message{};
@@ -39,11 +40,14 @@ std::vector<bool> out_message_ready{};
 
 static int thread_count = 0;
 volatile static bool continue_flag = true;
+char* recvbuf{nullptr};
 
 #ifdef _WIN32
 
 auto server_thread(int thread_number) -> void
 {
+    buffer_size.push_back(DEFAULT_BUFLEN);
+    need_buffer_resize.push_back(false);
     in_message.push_back("U");
     in_message_ready.push_back(false);
     out_message.push_back("U");
@@ -60,8 +64,6 @@ auto server_thread(int thread_number) -> void
     struct addrinfo hints;
 
     int iSendResult;
-    char recvbuf[DEFAULT_BUFLEN];
-    int recvbuflen = DEFAULT_BUFLEN;
 
     // Initialize Winsock
     iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -138,9 +140,25 @@ auto server_thread(int thread_number) -> void
     clients.back().detach();
 
     // Receive until the peer shuts down the connection
+
+    size_t current_buffer_size{DEFAULT_BUFLEN};
+
     do
     {
-        iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
+        if (need_buffer_resize[thread_number])
+        {
+            if (current_buffer_size < buffer_size[thread_number])
+            {
+                current_buffer_size = buffer_size[thread_number];
+                delete[] recvbuf;
+                recvbuf = new char[current_buffer_size];
+
+                std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
+            }
+            need_buffer_resize[thread_number] = false;
+        }
+
+        iResult = recv(ClientSocket, recvbuf, current_buffer_size, 0);
         if (iResult > 0)
         {
             // printf("Bytes received: %d\n", iResult);
@@ -148,7 +166,7 @@ auto server_thread(int thread_number) -> void
             in_message[thread_number] = std::string(recvbuf, iResult);
             // std::this_thread::sleep_for(std::chrono::milliseconds(100));
             in_message_ready[thread_number] = true;
-            
+
             std::cout << thread_number << in_message[thread_number] << std::endl;
 
             while (!out_message_ready[thread_number])
@@ -206,7 +224,8 @@ auto server_thread(int thread_number) -> void
 #elif defined __linux__
 auto client_loop(int thread_number, int connection) -> void
 {
-
+    buffer_size.push_back(DEFAULT_BUFLEN);
+    need_buffer_resize.push_back(false);
     in_message.push_back("U");
     in_message_ready.push_back(false);
     out_message.push_back("U");
@@ -218,6 +237,19 @@ auto client_loop(int thread_number, int connection) -> void
     std::string message{};
     while (1)
     {
+        if (need_buffer_resize[thread_number])
+        {
+            if (current_buffer_size < buffer_size[thread_number])
+            {
+                current_buffer_size = buffer_size[thread_number];
+                delete[] recvbuf;
+                recvbuf = new char[current_buffer_size];
+
+                std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
+            }
+            need_buffer_resize[thread_number] = false;
+        }
+
         bzero(recvbuf, DEFAULT_BUFLEN);
         ssize_t length = read(connection, recvbuf, sizeof(recvbuf));
         if (strncmp("end", recvbuf, 3) == 0)
@@ -319,7 +351,7 @@ auto main_loop(Application* app)
 
             // std::cout << "In message: " << in_message[i] << std::endl;
 
-            out_message[i] = app->reaction(in_message[i]);  // TODO Server reaction
+            app->reaction(in_message[i], out_message[i], i);  //
 
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
@@ -329,6 +361,15 @@ auto main_loop(Application* app)
         // std::cin >> msg;
         // if (msg == "end") break;
     }
+}
+
+Server::Server(Application* app) : _app(app)
+{
+    recvbuf = new char[DEFAULT_BUFLEN];
+}
+Server::~Server()
+{
+    delete[] recvbuf;
 }
 
 auto Server::run() -> void
@@ -346,22 +387,16 @@ auto Server::run() -> void
     std::thread t1(&main_loop, _app);
     t1.detach();
 
-    // while (true)
-    //{
-    //    //std::cin >> msg;
-    //    if (msg == "end")
-    //    {
-    //        continue_flag = false;
-    //        break;
-    //    }
-    //}
-
     return;
 }
 
 auto Server::setContinueFlag(bool flag) -> void
 {
-    {
-        continue_flag = flag;
-    }
+    continue_flag = flag;
+}
+
+auto Server::setBufferSize(int index, size_t size) const -> void
+{
+    buffer_size[index] = size;
+    need_buffer_resize[index] = true;
 }
