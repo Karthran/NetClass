@@ -2,6 +2,7 @@
 
 enum class OperationCode
 {
+	STOP,
 	CHECK_SIZE,
 	CHECK_NAME,
 	CHECK_LOGIN,

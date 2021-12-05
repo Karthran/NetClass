@@ -30,6 +30,7 @@ auto Application::reaction(const std::string& in_message, std::string& out_messa
     auto code_operation = static_cast<OperationCode>(std::stoi(code_operation_string));
     switch (code_operation)
     {
+        case OperationCode::STOP: onStop(in_message, out_message, thread_num); break;
         case OperationCode::CHECK_SIZE: onCheckSize(in_message, out_message, thread_num); break;
         case OperationCode::CHECK_NAME: onCheckName(in_message, out_message); break;
         case OperationCode::CHECK_LOGIN: break;
@@ -72,6 +73,8 @@ auto Application::onCheckName(const std::string& in_message, std::string& out_me
 
     auto message_size{getName().size()};
 }
+
+auto Application::onStop(const std::string& in_message, std::string& out_message, int thread_num) -> void {}
 
 auto Application::onError(std::string& out_message) const -> void
 {

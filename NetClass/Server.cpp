@@ -40,14 +40,13 @@ std::vector<bool> out_message_ready{};
 
 static int thread_count = 0;
 volatile static bool continue_flag = true;
-char* recvbuf{nullptr};
 
 #ifdef _WIN32
 
 auto server_thread(int thread_number) -> void
 {
     buffer_size.push_back(DEFAULT_BUFLEN);
-    need_buffer_resize.push_back(false);
+    need_buffer_resize.push_back(true);
     in_message.push_back("U");
     in_message_ready.push_back(false);
     out_message.push_back("U");
@@ -140,8 +139,9 @@ auto server_thread(int thread_number) -> void
     clients.back().detach();
 
     // Receive until the peer shuts down the connection
+    char* recvbuf{nullptr};
 
-    size_t current_buffer_size{DEFAULT_BUFLEN};
+    size_t current_buffer_size{0};
 
     do
     {
@@ -168,6 +168,12 @@ auto server_thread(int thread_number) -> void
             in_message_ready[thread_number] = true;
 
             std::cout << thread_number << in_message[thread_number] << std::endl;
+
+            if (in_message[thread_number] == "0")
+            {
+                std::cout << "Client Exited." << std::endl;
+                break;
+            }
 
             while (!out_message_ready[thread_number])
             {
@@ -218,6 +224,9 @@ auto server_thread(int thread_number) -> void
     closesocket(ClientSocket);
     WSACleanup();
 
+    delete[] recvbuf;
+    std::cout << "Clear recvbuf" << std::endl;
+
     return;
 }
 
@@ -225,13 +234,15 @@ auto server_thread(int thread_number) -> void
 auto client_loop(int thread_number, int connection) -> void
 {
     buffer_size.push_back(DEFAULT_BUFLEN);
-    need_buffer_resize.push_back(false);
+    need_buffer_resize.push_back(true);
     in_message.push_back("U");
     in_message_ready.push_back(false);
     out_message.push_back("U");
     out_message_ready.push_back(false);
 
-    char recvbuf[DEFAULT_BUFLEN];
+    char* recvbuf{nullptr};
+
+    size_t current_buffer_size{0};
 
     // Communication Establishment
     std::string message{};
@@ -252,14 +263,14 @@ auto client_loop(int thread_number, int connection) -> void
 
         bzero(recvbuf, DEFAULT_BUFLEN);
         ssize_t length = read(connection, recvbuf, sizeof(recvbuf));
-        if (strncmp("end", recvbuf, 3) == 0)
+        in_message[thread_number] = std::string(recvbuf, length);
+        //        if (strncmp("end", recvbuf, 3) == 0)
+        if (in_message[thread_number] == "0")
         {
             std::cout << "Client Exited." << std::endl;
-            std::cout << "Server is Exiting..!" << std::endl;
             break;
         }
 
-        in_message[thread_number] = std::string(recvbuf, length);
         // std::this_thread::sleep_for(std::chrono::milliseconds(100));
         in_message_ready[thread_number] = true;
 
@@ -278,6 +289,9 @@ auto client_loop(int thread_number, int connection) -> void
     }
     // close socket
     close(connection);
+
+    delete[] recvbuf;
+    std::cout << "Clear recvbuf" << std::endl;
 
     return;
 }
@@ -365,11 +379,11 @@ auto main_loop(Application* app)
 
 Server::Server(Application* app) : _app(app)
 {
-    recvbuf = new char[DEFAULT_BUFLEN];
+    //   recvbuf = new char[DEFAULT_BUFLEN];
 }
 Server::~Server()
 {
-    delete[] recvbuf;
+    //   delete[] recvbuf;
 }
 
 auto Server::run() -> void
