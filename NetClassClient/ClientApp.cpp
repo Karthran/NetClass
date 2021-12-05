@@ -2,6 +2,7 @@
 
 #include "ClientApp.h"
 #include "Client.h"
+#include "../core.h"
 
 auto ClientApp::run() -> void
 {
@@ -10,28 +11,20 @@ auto ClientApp::run() -> void
     loop();
 }
 
-auto ClientApp::talk_to_server(const std::string& message)const -> const std::string&
+auto ClientApp::talk_to_server(const std::string& message, OperationCode operation_code) const -> const std::string&
 {
     while (_client->getOutMessageReady())
     {
     }
-    // std::cin >> message;
-    //    std::getline(std::cin, message);
     _client->setMessage(message);
     _client->setOutMessageReady(true);
-    // if (message == "end")
-    //{
-    //    loop_flag = false;
-    //}
     while (!_client->getInMessageReady())
     {
         if (_client->getServerError())
         {
-            //            loop_flag = false;
             break;
         }
     }
-    // std::cout << message << std::endl;
     _client->setInMessageReady(false);
     return _client->getMessage();
 }
@@ -47,7 +40,7 @@ auto ClientApp::loop() -> void
         {
             loop_flag = false;
         }
-        message = talk_to_server(message);
+        message = talk_to_server(message, OperationCode::CHECK_NAME);
 
         std::cout << message << std::endl;
     }
