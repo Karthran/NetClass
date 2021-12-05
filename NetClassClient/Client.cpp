@@ -147,14 +147,17 @@ int client_thread()
         {
             // shutdown the connection since no more data will be sent
             iResult = shutdown(ConnectSocket, SD_SEND);
-            if (iResult == SOCKET_ERROR)
-            {
-                printf("shutdown failed with error: %d\n", WSAGetLastError());
-                closesocket(ConnectSocket);
-                WSACleanup();
-                server_error = true;
-                break;
-            }
+            server_error = true;
+            break;
+
+            //if (iResult == SOCKET_ERROR)
+            //{
+            //    printf("shutdown failed with error: %d\n", WSAGetLastError());
+            //    closesocket(ConnectSocket);
+            //    WSACleanup();
+            //    server_error = true;
+            //    break;
+            //}
         }
         // Receive until the peer closes the connection
         //       do {
@@ -242,11 +245,11 @@ int client_thread()
         {
         }
 
-        bzero(recvbuf, sizeof(recvbuf));
+ //       bzero(recvbuf, sizeof(recvbuf));
         std::copy(message.begin(), message.end(), recvbuf);
 
         ssize_t bytes = write(socket_file_descriptor, recvbuf, message.size());
-        if ((strncmp(recvbuf, "end", 3)) == 0)
+        if (message == "0")
         {
             write(socket_file_descriptor, recvbuf, message.size());
             std::cout << "Client Exit." << std::endl;
@@ -269,6 +272,7 @@ int client_thread()
     }
     // закрываем сокет, завершаем соединение
     close(connection);
+    delete[] recvbuf;
     return 0;
 }
 

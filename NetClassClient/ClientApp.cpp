@@ -59,7 +59,9 @@ auto ClientApp::loop() -> void
         std::getline(std::cin, message);
         if (message == "end")
         {
+            talkToServer(std::to_string(static_cast<int>(OperationCode::STOP)));
             loop_flag = false;
+            break;
         }
         sendToServer(message, OperationCode::CHECK_NAME);
 
