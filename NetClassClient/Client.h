@@ -11,5 +11,6 @@ public:
     auto getMessage() -> const std::string&;
     auto setMessage(const std::string& msg)const -> void;
     auto getServerError()const -> bool;
+    auto setBufferSize(size_t size) const -> void;
 };
 

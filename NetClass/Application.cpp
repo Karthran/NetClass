@@ -48,7 +48,7 @@ auto Application::onCheckSize(const std::string& in_message, std::string& out_me
 
     auto message_length{std::stoi(size_string)};
 
-    _server->setBufferSize(thread_num, message_length);
+    _server->setBufferSize(thread_num, message_length + HEADER_SIZE);
 
     out_message = in_message;
 }
@@ -56,22 +56,22 @@ auto Application::onCheckSize(const std::string& in_message, std::string& out_me
 auto Application::onCheckName(const std::string& in_message, std::string& out_message) -> void
 {
     std::string code_operation_string;
+    std::string name;
     std::stringstream stream(in_message);
-    stream >> code_operation_string >> code_operation_string;
+    stream >> code_operation_string >> code_operation_string >> name;
     auto code_operation = static_cast<OperationCode>(std::stoi(code_operation_string));
-    auto msg{getName()};
+    auto msg{checkName(name)};
     switch (code_operation)
     {
         case OperationCode::CHECK_SIZE: 
-            out_message = std::to_string(static_cast<int>(OperationCode::CHECK_SIZE)) + " " + std::to_string(msg.size());
+            out_message = std::to_string(static_cast<int>(OperationCode::CHECK_SIZE)) + " " + std::to_string(msg.size() + HEADER_SIZE);
             break;
         case OperationCode::READY:
-            out_message = std::to_string(static_cast<int>(OperationCode::CHECK_NAME)) + " " + msg;
+            out_message = /*std::to_string(static_cast<int>(OperationCode::CHECK_NAME)) + " " + */msg;
             break;
         default: return onError(out_message); break;
     }
 
-    auto message_size{getName().size()};
 }
 
 auto Application::onStop(const std::string& in_message, std::string& out_message, int thread_num) -> void {}
@@ -79,4 +79,10 @@ auto Application::onStop(const std::string& in_message, std::string& out_message
 auto Application::onError(std::string& out_message) const -> void
 {
     out_message = std::to_string(static_cast<int>(OperationCode::ERROR)) + " " + "ERROR";
+}
+
+auto Application::checkName(const std::string& name) -> const std::string
+{
+    if (name == "Jhon") return "OK";
+    return "ERROR";
 }

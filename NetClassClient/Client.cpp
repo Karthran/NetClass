@@ -37,6 +37,8 @@ volatile bool out_message_ready{false};
 volatile bool in_message_ready{false};
 volatile bool server_error{false};
 std::string message{};
+volatile size_t buffer_size{DEFAULT_BUFLEN};
+volatile bool need_buffer_resize{true};
 
 #ifdef _WIN32
 
@@ -45,11 +47,9 @@ int client_thread()
     WSADATA wsaData;
     SOCKET ConnectSocket = INVALID_SOCKET;
     struct addrinfo *result = NULL, *ptr = NULL, hints;
-    // const char* sendbuf = "this is a test";
-    char recvbuf[DEFAULT_BUFLEN];
-    char sendbuf[DEFAULT_BUFLEN];
+    //   char recvbuf[DEFAULT_BUFLEN];
     int iResult;
-    int recvbuflen = DEFAULT_BUFLEN;
+    //   int recvbuflen = DEFAULT_BUFLEN;
 
     // Initialize Winsock
     iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -106,31 +106,44 @@ int client_thread()
         return 1;
     }
 
+    char* recvbuf{nullptr};
+    size_t current_buffer_size{0};
+
     while (true)
     {
-        // Send an initial buffer
-        // std::string msg("this is a test");
-        // std::cin >> msg;
+        if (need_buffer_resize)
+        {
+            if (current_buffer_size < buffer_size)
+            {
+                current_buffer_size = buffer_size;
+                delete[] recvbuf;
+                recvbuf = new char[current_buffer_size];
+
+                std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
+            }
+            need_buffer_resize = false;
+        }
+
         while (!out_message_ready)
         {
         }
 
         // std::cout <<"OutMessage: " << message << std::endl;
 
-        std::copy(message.begin(), message.end(), sendbuf);
-        iResult = send(ConnectSocket, sendbuf, message.size(), 0);
+        std::copy(message.begin(), message.end(), recvbuf);
+        iResult = send(ConnectSocket, recvbuf, message.size(), 0);
         if (iResult == SOCKET_ERROR)
         {
             printf("send failed with error: %d\n", WSAGetLastError());
             closesocket(ConnectSocket);
             WSACleanup();
             server_error = true;
-            return 1;
+            break;
         }
         out_message_ready = false;
         // printf("Bytes Sent: %ld\n", iResult);
 
-        if (message == "end")
+        if (message == "0")
         {
             // shutdown the connection since no more data will be sent
             iResult = shutdown(ConnectSocket, SD_SEND);
@@ -140,13 +153,13 @@ int client_thread()
                 closesocket(ConnectSocket);
                 WSACleanup();
                 server_error = true;
-                return 1;
+                break;
             }
         }
         // Receive until the peer closes the connection
         //       do {
 
-        iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
+        iResult = recv(ConnectSocket, recvbuf, current_buffer_size, 0);
         if (iResult > 0)
         {
             // printf("Bytes received: %d\n", iResult);
@@ -172,6 +185,8 @@ int client_thread()
     closesocket(ConnectSocket);
     WSACleanup();
 
+    delete[] recvbuf;
+
     return 0;
 }
 
@@ -182,9 +197,7 @@ int client_thread()
     int socket_file_descriptor, connection;
     struct sockaddr_in serveraddress, client;
 
-    char recvbuf[DEFAULT_BUFLEN];
-    char sendbuf[DEFAULT_BUFLEN];
-    int recvbuflen = DEFAULT_BUFLEN;
+    char* recvbuf{nullptr};
 
     // Создадим сокет
     socket_file_descriptor = socket(AF_INET, SOCK_STREAM, 0);
@@ -208,19 +221,34 @@ int client_thread()
         exit(1);
     }
     // Взаимодействие с сервером
+    size_t current_buffer_size{0};
+
     while (1)
     {
+        if (need_buffer_resize)
+        {
+            if (current_buffer_size < buffer_size)
+            {
+                current_buffer_size = buffer_size;
+                delete[] recvbuf;
+                recvbuf = new char[current_buffer_size];
+
+                std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
+            }
+            need_buffer_resize = false;
+        }
+
         while (!out_message_ready)
         {
         }
 
-        bzero(sendbuf, sizeof(sendbuf));
-        std::copy(message.begin(), message.end(), sendbuf);
+        bzero(recvbuf, sizeof(recvbuf));
+        std::copy(message.begin(), message.end(), recvbuf);
 
-        ssize_t bytes = write(socket_file_descriptor, sendbuf, message.size());
-        if ((strncmp(sendbuf, "end", 3)) == 0)
+        ssize_t bytes = write(socket_file_descriptor, recvbuf, message.size());
+        if ((strncmp(recvbuf, "end", 3)) == 0)
         {
-            write(socket_file_descriptor, sendbuf, message.size());
+            write(socket_file_descriptor, recvbuf, message.size());
             std::cout << "Client Exit." << std::endl;
             server_error = true;
             break;
@@ -230,12 +258,12 @@ int client_thread()
         {
             out_message_ready = false;
         }
-        bzero(sendbuf, sizeof(sendbuf));
+        bzero(recvbuf, sizeof(recvbuf));
         // Ждем ответа от сервера
-        ssize_t length = read(socket_file_descriptor, sendbuf, sizeof(sendbuf));
+        ssize_t length = read(socket_file_descriptor, recvbuf, sizeof(recvbuf));
         if (length > 0)
         {
-            message = std::string(sendbuf, length);
+            message = std::string(recvbuf, length);
             in_message_ready = true;
         }
     }
@@ -250,8 +278,8 @@ auto Client::run() -> void
 {
     std::thread tr(&client_thread);
     tr.detach();
-    //bool loop_flag = true;
-    //while (loop_flag)
+    // bool loop_flag = true;
+    // while (loop_flag)
     //{
     //    //while (out_message_ready)
     //    //{
@@ -274,28 +302,28 @@ auto Client::run() -> void
     //    //std::cout << message << std::endl;
     //    //in_message_ready = false;
     //}
-    //std::cout << "Client stop!" << std::endl;
-    //auto res{0};
-    //std::cin >> res;
-    //return;
+    // std::cout << "Client stop!" << std::endl;
+    // auto res{0};
+    // std::cin >> res;
+    // return;
 }
 
-auto Client::getOutMessageReady()const -> bool
+auto Client::getOutMessageReady() const -> bool
 {
     return out_message_ready;
 }
 
-auto Client::setOutMessageReady(bool flag)const -> void
+auto Client::setOutMessageReady(bool flag) const -> void
 {
     out_message_ready = flag;
 }
 
-auto Client::getInMessageReady()const -> bool
+auto Client::getInMessageReady() const -> bool
 {
     return in_message_ready;
 }
 
-auto Client::setInMessageReady(bool flag)const -> void
+auto Client::setInMessageReady(bool flag) const -> void
 {
     in_message_ready = flag;
 }
@@ -305,12 +333,18 @@ auto Client::getMessage() -> const std::string&
     return message;
 }
 
-auto Client::setMessage(const std::string& msg)const -> void 
+auto Client::setMessage(const std::string& msg) const -> void
 {
     message = msg;
 }
 
-auto Client::getServerError()const -> bool
+auto Client::getServerError() const -> bool
 {
     return server_error;
+}
+
+auto Client::setBufferSize(size_t size) const -> void
+{
+    buffer_size = size;
+    need_buffer_resize = true;
 }

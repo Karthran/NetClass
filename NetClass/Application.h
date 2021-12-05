@@ -15,6 +15,6 @@ private:
     auto onError(std::string& out_message) const -> void;
 
     /////////////////////////DEBUG//////////////////////////////
-    auto getName() -> const std::string { return "Jhon"; }
+    auto checkName(const std::string& name) -> const std::string;
     /////////////////////////DEBUG//////////////////////////////
 };
