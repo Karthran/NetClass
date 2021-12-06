@@ -119,7 +119,7 @@ int client_thread()
                 delete[] recvbuf;
                 recvbuf = new char[current_buffer_size];
 
-                std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
+                //std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
             }
             need_buffer_resize = false;
         }
@@ -150,17 +150,7 @@ int client_thread()
             server_error = true;
             break;
 
-            //if (iResult == SOCKET_ERROR)
-            //{
-            //    printf("shutdown failed with error: %d\n", WSAGetLastError());
-            //    closesocket(ConnectSocket);
-            //    WSACleanup();
-            //    server_error = true;
-            //    break;
-            //}
         }
-        // Receive until the peer closes the connection
-        //       do {
 
         iResult = recv(ConnectSocket, recvbuf, current_buffer_size, 0);
         if (iResult > 0)
@@ -181,8 +171,6 @@ int client_thread()
             printf("recv failed with error: %d\n", WSAGetLastError());
             break;
         }
-
-        //       } while (iResult > 0);
     }
     // cleanup
     closesocket(ConnectSocket);
@@ -236,7 +224,7 @@ int client_thread()
                 delete[] recvbuf;
                 recvbuf = new char[current_buffer_size];
 
-                std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
+                //std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
             }
             need_buffer_resize = false;
         }
@@ -251,7 +239,7 @@ int client_thread()
         if (message == "0")
         {
             write(socket_file_descriptor, recvbuf, message.size());
-            std::cout << "Client Exit." << std::endl;
+//            std::cout << "Client Exit." << std::endl;
             server_error = true;
             break;
         }
@@ -285,34 +273,6 @@ auto Client::run() -> void
 {
     std::thread tr(&client_thread);
     tr.detach();
-    // bool loop_flag = true;
-    // while (loop_flag)
-    //{
-    //    //while (out_message_ready)
-    //    //{
-    //    //}
-    //    //// std::cin >> message;
-    //    //std::getline(std::cin, message);
-    //    //out_message_ready = true;
-    //    //if (message == "end")
-    //    //{
-    //    //    loop_flag = false;
-    //    //}
-    //    //while (!in_message_ready)
-    //    //{
-    //    //    if (server_error)
-    //    //    {
-    //    //        loop_flag = false;
-    //    //        break;
-    //    //    }
-    //    //}
-    //    //std::cout << message << std::endl;
-    //    //in_message_ready = false;
-    //}
-    // std::cout << "Client stop!" << std::endl;
-    // auto res{0};
-    // std::cin >> res;
-    // return;
 }
 
 auto Client::getOutMessageReady() const -> bool

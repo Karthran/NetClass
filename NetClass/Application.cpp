@@ -27,7 +27,7 @@ auto Application::reaction(const std::string& in_message, std::string& out_messa
     std::string code_operation_string;
     std::stringstream stream(in_message);
     stream >> code_operation_string;
-    std::cout << "CODE: " << code_operation_string << std::endl;
+    //std::cout << "CODE: " << code_operation_string << std::endl;
     try{
     auto code_operation = static_cast<OperationCode>(std::stoi(code_operation_string));
     switch (code_operation)
@@ -53,7 +53,7 @@ auto Application::onCheckSize(const std::string& in_message, std::string& out_me
     std::stringstream stream(in_message);
     stream >> size_string >> size_string;
 
-    std::cout << "SIZE: " << size_string << std::endl;
+    //std::cout << "SIZE: " << size_string << std::endl;
 
     auto message_length{std::stoi(size_string)};
 

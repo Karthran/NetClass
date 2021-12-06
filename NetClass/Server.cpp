@@ -155,7 +155,7 @@ auto server_thread(int thread_number) -> void
                 delete[] recvbuf;
                 recvbuf = new char[current_buffer_size];
 
-                std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
+                //std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
             }
             need_buffer_resize[thread_number] = false;
         }
@@ -169,7 +169,7 @@ auto server_thread(int thread_number) -> void
             // std::this_thread::sleep_for(std::chrono::milliseconds(100));
             in_message_ready[thread_number] = true;
 
-            std::cout << thread_number << in_message[thread_number] << std::endl;
+            //std::cout << thread_number << in_message[thread_number] << std::endl;
 
             if (in_message[thread_number] == "0")
             {
@@ -196,7 +196,7 @@ auto server_thread(int thread_number) -> void
             }
             // printf("Bytes sent: %d\n", iSendResult);
 
-            std::cout << thread_number << out_message[thread_number] << std::endl;
+            //std::cout << thread_number << out_message[thread_number] << std::endl;
 
             out_message_ready[thread_number] = false;
         }
@@ -227,7 +227,7 @@ auto server_thread(int thread_number) -> void
     WSACleanup();
 
     delete[] recvbuf;
-    std::cout << "Clear recvbuf" << std::endl;
+    //std::cout << "Clear recvbuf" << std::endl;
 
     return;
 }
@@ -258,7 +258,7 @@ auto client_loop(int thread_number, int connection) -> void
                 delete[] recvbuf;
                 recvbuf = new char[current_buffer_size];
 
-                std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
+                //std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
             }
             need_buffer_resize[thread_number] = false;
         }
@@ -270,7 +270,7 @@ auto client_loop(int thread_number, int connection) -> void
         // std::this_thread::sleep_for(std::chrono::milliseconds(100));
 //        in_message_ready[thread_number] = true;
 
-        std::cout << in_message[thread_number] << std::endl;
+        //std::cout << in_message[thread_number] << std::endl;
 
         if (in_message[thread_number] == "0")
         {
@@ -298,7 +298,7 @@ auto client_loop(int thread_number, int connection) -> void
     close(connection);
 
     delete[] recvbuf;
-    std::cout << "Clear recvbuf" << std::endl;
+    //std::cout << "Clear recvbuf" << std::endl;
 
     return;
 }
@@ -372,7 +372,7 @@ auto main_loop(Application* app)
 
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-            std::cout << "In message: " << in_message[i] << " " << i << std::endl;
+            //std::cout << "In message: " << in_message[i] << " " << i << std::endl;
 
             app->reaction(in_message[i], out_message[i], i);  //
 
