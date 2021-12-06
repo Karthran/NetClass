@@ -31,6 +31,7 @@ const int DEFAULT_PORT = 27777;  // A
 #endif  //  _WIN32
 
 std::vector<std::thread> clients;
+std::vector<std::string> cash_message{};
 std::vector<size_t> buffer_size{};
 std::vector<bool> need_buffer_resize{};
 std::vector<std::string> in_message{};
@@ -45,6 +46,7 @@ volatile static bool continue_flag = true;
 
 auto server_thread(int thread_number) -> void
 {
+    cash_message.push_back("U");
     buffer_size.push_back(DEFAULT_BUFLEN);
     need_buffer_resize.push_back(true);
     in_message.push_back("U");
@@ -233,6 +235,7 @@ auto server_thread(int thread_number) -> void
 #elif defined __linux__
 auto client_loop(int thread_number, int connection) -> void
 {
+    cash_message.push_back("U");
     buffer_size.push_back(DEFAULT_BUFLEN);
     need_buffer_resize.push_back(true);
     in_message.push_back("U");
@@ -419,5 +422,14 @@ auto Server::setBufferSize(int index, size_t size) const -> void
 {
     buffer_size[index] = size;
     need_buffer_resize[index] = true;
+}
+
+auto Server::setCashMessage(const std::string& msg, int thread_num) const -> void {
+    cash_message[thread_num] = msg;
+}
+
+auto Server::getCashMessage(int thread_num) const -> const std::string&
+{
+    return cash_message[thread_num];
 }
 

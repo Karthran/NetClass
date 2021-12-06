@@ -10,7 +10,7 @@ private:
     Server* _server{nullptr};
 
     auto onCheckSize(const std::string& in_message, std::string& out_message, int thread_num) const -> void;
-    auto onCheckName(const std::string& in_message, std::string& out_message) -> void;
+    auto onCheckName(const std::string& in_message, std::string& out_message, int thread_num) -> void;
     auto onStop(const std::string& in_message, std::string& out_message, int thread_num) -> void;
     auto onError(std::string& out_message) const -> void;
 

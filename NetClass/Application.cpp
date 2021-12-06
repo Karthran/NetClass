@@ -34,7 +34,7 @@ auto Application::reaction(const std::string& in_message, std::string& out_messa
     {
         case OperationCode::STOP: onStop(in_message, out_message, thread_num); break;
         case OperationCode::CHECK_SIZE: onCheckSize(in_message, out_message, thread_num); break;
-        case OperationCode::CHECK_NAME: onCheckName(in_message, out_message); break;
+        case OperationCode::CHECK_NAME: onCheckName(in_message, out_message, thread_num); break;
         case OperationCode::CHECK_LOGIN: break;
         case OperationCode::REGISTRATION: break;
         case OperationCode::SIGN_IN: break;
@@ -62,21 +62,25 @@ auto Application::onCheckSize(const std::string& in_message, std::string& out_me
     out_message = in_message;
 }
 
-auto Application::onCheckName(const std::string& in_message, std::string& out_message) -> void
+auto Application::onCheckName(const std::string& in_message, std::string& out_message, int thread_num) -> void
 {
     std::string code_operation_string;
     std::string name;
     std::stringstream stream(in_message);
     stream >> code_operation_string >> code_operation_string >> name;
     auto code_operation = static_cast<OperationCode>(std::stoi(code_operation_string));
-    auto msg{checkName(name)};
     switch (code_operation)
     {
         case OperationCode::CHECK_SIZE:
+        {
+
+            auto msg{checkName(name)};
+            _server->setCashMessage(checkName(name), thread_num);
             out_message = std::to_string(static_cast<int>(OperationCode::CHECK_SIZE)) + " " + std::to_string(msg.size() + HEADER_SIZE);
             break;
+        }
         case OperationCode::READY:
-            out_message = /*std::to_string(static_cast<int>(OperationCode::CHECK_NAME)) + " " + */msg;
+            out_message = /*std::to_string(static_cast<int>(OperationCode::CHECK_NAME)) + " " + */_server->getCashMessage(thread_num);
             break;
         default: return onError(out_message); break;
     }
