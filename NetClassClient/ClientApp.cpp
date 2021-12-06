@@ -37,7 +37,7 @@ auto ClientApp::talkToServer(const std::string& message) const -> const std::str
     while (_client->getOutMessageReady())
     {
     }
-    std::cout << message << std::endl;
+    //std::cout << message << std::endl;
     _client->setMessage(message);
     _client->setOutMessageReady(true);
     while (!_client->getInMessageReady())
