@@ -248,7 +248,6 @@ int client_thread()
  //       bzero(recvbuf, sizeof(recvbuf));
         std::copy(message.begin(), message.end(), recvbuf);
 
-        ssize_t bytes = write(socket_file_descriptor, recvbuf, message.size());
         if (message == "0")
         {
             write(socket_file_descriptor, recvbuf, message.size());
@@ -256,6 +255,8 @@ int client_thread()
             server_error = true;
             break;
         }
+        ssize_t bytes = write(socket_file_descriptor, recvbuf, message.size());
+
         // Если передали >= 0  байт, значит пересылка прошла успешно
         if (bytes >= 0)
         {
