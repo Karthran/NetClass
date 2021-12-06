@@ -28,7 +28,7 @@ const char* DEFAULT_PORT = "27777";
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-const int DEFAULT_PORT = 27777;  // Б
+const int DEFAULT_PORT = 27777;  // ГЃ
 #endif  //  _WIN32
 
 const int DEFAULT_BUFLEN = 1024;
@@ -60,7 +60,7 @@ int client_thread()
     }
 
     ZeroMemory(&hints, sizeof(hints));
-    hints.ai_family = AF_UNSPEC;
+                                             hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
 
@@ -202,7 +202,7 @@ int client_thread()
 
     char* recvbuf{nullptr};
 
-    // Создадим сокет
+    // Г‘Г®Г§Г¤Г Г¤ГЁГ¬ Г±Г®ГЄГҐГІ
     socket_file_descriptor = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_file_descriptor == -1)
     {
@@ -210,20 +210,20 @@ int client_thread()
         exit(1);
     }
 
-    // Установим адрес сервера
+    // Г“Г±ГІГ Г­Г®ГўГЁГ¬ Г Г¤Г°ГҐГ± Г±ГҐГ°ГўГҐГ°Г 
     serveraddress.sin_addr.s_addr = inet_addr("127.0.0.1");
-    // Зададим номер порта
+    // Г‡Г Г¤Г Г¤ГЁГ¬ Г­Г®Г¬ГҐГ° ГЇГ®Г°ГІГ 
     serveraddress.sin_port = htons(DEFAULT_PORT);
-    // Используем IPv4
+    // Г€Г±ГЇГ®Г«ГјГ§ГіГҐГ¬ IPv4
     serveraddress.sin_family = AF_INET;
-    // Установим соединение с сервером
+    // Г“Г±ГІГ Г­Г®ГўГЁГ¬ Г±Г®ГҐГ¤ГЁГ­ГҐГ­ГЁГҐ Г± Г±ГҐГ°ГўГҐГ°Г®Г¬
     connection = connect(socket_file_descriptor, (struct sockaddr*)&serveraddress, sizeof(serveraddress));
     if (connection == -1)
     {
         std::cout << "Connection with the server failed.!" << std::endl;
         exit(1);
     }
-    // Взаимодействие с сервером
+    // Г‚Г§Г ГЁГ¬Г®Г¤ГҐГ©Г±ГІГўГЁГҐ Г± Г±ГҐГ°ГўГҐГ°Г®Г¬
     size_t current_buffer_size{0};
 
     while (1)
@@ -240,14 +240,14 @@ int client_thread()
             }
             need_buffer_resize = false;
         }
-
         while (!out_message_ready)
         {
         }
 
- //       bzero(recvbuf, sizeof(recvbuf));
+//        bzero(recvbuf, sizeof(recvbuf));
         std::copy(message.begin(), message.end(), recvbuf);
 
+//        ssize_t bytes = write(socket_file_descriptor, recvbuf, message.size());
         if (message == "0")
         {
             write(socket_file_descriptor, recvbuf, message.size());
@@ -255,15 +255,16 @@ int client_thread()
             server_error = true;
             break;
         }
+
         ssize_t bytes = write(socket_file_descriptor, recvbuf, message.size());
 
-        // Если передали >= 0  байт, значит пересылка прошла успешно
+        // Г…Г±Г«ГЁ ГЇГҐГ°ГҐГ¤Г Г«ГЁ >= 0  ГЎГ Г©ГІ, Г§Г­Г Г·ГЁГІ ГЇГҐГ°ГҐГ±Г»Г«ГЄГ  ГЇГ°Г®ГёГ«Г  ГіГ±ГЇГҐГёГ­Г®
         if (bytes >= 0)
         {
             out_message_ready = false;
         }
         bzero(recvbuf, sizeof(recvbuf));
-        // Ждем ответа от сервера
+        // Г†Г¤ГҐГ¬ Г®ГІГўГҐГІГ  Г®ГІ Г±ГҐГ°ГўГҐГ°Г 
         ssize_t length = read(socket_file_descriptor, recvbuf, sizeof(recvbuf));
         if (length > 0)
         {
@@ -271,9 +272,10 @@ int client_thread()
             in_message_ready = true;
         }
     }
-    // закрываем сокет, завершаем соединение
+    // Г§Г ГЄГ°Г»ГўГ ГҐГ¬ Г±Г®ГЄГҐГІ, Г§Г ГўГҐГ°ГёГ ГҐГ¬ Г±Г®ГҐГ¤ГЁГ­ГҐГ­ГЁГҐ
     close(connection);
     delete[] recvbuf;
+
     return 0;
 }
 
@@ -353,3 +355,4 @@ auto Client::setBufferSize(size_t size) const -> void
     buffer_size = size;
     need_buffer_resize = true;
 }
+                                       

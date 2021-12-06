@@ -1,5 +1,6 @@
 #include <iostream>
 #include <sstream>
+#include <exception>
 
 #include "Application.h"
 #include "Server.h"
@@ -26,7 +27,8 @@ auto Application::reaction(const std::string& in_message, std::string& out_messa
     std::string code_operation_string;
     std::stringstream stream(in_message);
     stream >> code_operation_string;
-    std::cout << code_operation_string << std::endl;
+    std::cout << "CODE: " << code_operation_string << std::endl;
+    try{
     auto code_operation = static_cast<OperationCode>(std::stoi(code_operation_string));
     switch (code_operation)
     {
@@ -38,6 +40,11 @@ auto Application::reaction(const std::string& in_message, std::string& out_messa
         case OperationCode::SIGN_IN: break;
         default: return onError(out_message); break;
     }
+    }
+    catch (const std::invalid_argument & e) {
+    //    throw NoNumber(input);
+      out_message = in_message;
+    }
 }
 
 auto Application::onCheckSize(const std::string& in_message, std::string& out_message, int thread_num) const -> void
@@ -45,6 +52,8 @@ auto Application::onCheckSize(const std::string& in_message, std::string& out_me
     std::string size_string;
     std::stringstream stream(in_message);
     stream >> size_string >> size_string;
+
+    std::cout << "SIZE: " << size_string << std::endl;
 
     auto message_length{std::stoi(size_string)};
 
@@ -63,7 +72,7 @@ auto Application::onCheckName(const std::string& in_message, std::string& out_me
     auto msg{checkName(name)};
     switch (code_operation)
     {
-        case OperationCode::CHECK_SIZE: 
+        case OperationCode::CHECK_SIZE:
             out_message = std::to_string(static_cast<int>(OperationCode::CHECK_SIZE)) + " " + std::to_string(msg.size() + HEADER_SIZE);
             break;
         case OperationCode::READY:
@@ -86,3 +95,4 @@ auto Application::checkName(const std::string& name) -> const std::string
     if (name == "Jhon") return "OK";
     return "ERROR";
 }
+                    

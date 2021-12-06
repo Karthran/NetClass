@@ -11,7 +11,7 @@ auto ClientApp::run() -> void
     loop();
 }
 
-auto ClientApp::sendToServer(std::string& message, OperationCode operation_code) const -> void 
+auto ClientApp::sendToServer(std::string& message, OperationCode operation_code) const -> void
 {
     std::string msg_to_srv = std::to_string(static_cast<int>(OperationCode::CHECK_SIZE)) + " " + std::to_string(message.size() + HEADER_SIZE);
     std::string msg_from_srv = talkToServer(msg_to_srv);
@@ -28,7 +28,7 @@ auto ClientApp::sendToServer(std::string& message, OperationCode operation_code)
                  std::to_string(static_cast<int>(OperationCode::READY)) + " " + message;
 
     message = talkToServer(msg_to_srv);
-    //return 
+    //return
 
 }
 
@@ -37,6 +37,7 @@ auto ClientApp::talkToServer(const std::string& message) const -> const std::str
     while (_client->getOutMessageReady())
     {
     }
+    std::cout << message << std::endl;
     _client->setMessage(message);
     _client->setOutMessageReady(true);
     while (!_client->getInMessageReady())

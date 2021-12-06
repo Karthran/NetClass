@@ -27,7 +27,7 @@ const char* DEFAULT_PORT = "27777";
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-const int DEFAULT_PORT = 27777;  // Б
+const int DEFAULT_PORT = 27777;  // A
 #endif  //  _WIN32
 
 std::vector<std::thread> clients;
@@ -60,7 +60,7 @@ auto server_thread(int thread_number) -> void
     SOCKET ClientSocket = INVALID_SOCKET;
 
     struct addrinfo* result = NULL;
-    struct addrinfo hints;
+ struct addrinfo hints;
 
     int iSendResult;
 
@@ -182,7 +182,7 @@ auto server_thread(int thread_number) -> void
             std::this_thread::sleep_for(std::chrono::milliseconds(50));  // NEED
             // std::cout << out_message[thread_number] << std::endl;
 
-            std::copy(out_message[thread_number].begin(), out_message[thread_number].end(), recvbuf);
+           std::copy(out_message[thread_number].begin(), out_message[thread_number].end(), recvbuf);
             // Echo the buffer back to the sender
             iSendResult = send(ClientSocket, recvbuf, out_message[thread_number].size(), 0);
             if (iSendResult == SOCKET_ERROR)
@@ -241,8 +241,7 @@ auto client_loop(int thread_number, int connection) -> void
     out_message_ready.push_back(false);
 
     char* recvbuf{nullptr};
-
-    size_t current_buffer_size{0};
+   size_t current_buffer_size{0};
 
     // Communication Establishment
     std::string message{};
@@ -261,18 +260,23 @@ auto client_loop(int thread_number, int connection) -> void
             need_buffer_resize[thread_number] = false;
         }
 
-        bzero(recvbuf, DEFAULT_BUFLEN);
-        ssize_t length = read(connection, recvbuf, sizeof(recvbuf));
+//      bzero(recvbuf, DEFAULT_BUFLEN);
+        ssize_t length = read(connection, recvbuf, current_buffer_size);
         in_message[thread_number] = std::string(recvbuf, length);
-        //        if (strncmp("end", recvbuf, 3) == 0)
+
+        // std::this_thread::sleep_for(std::chrono::milliseconds(100));
+//        in_message_ready[thread_number] = true;
+
+        std::cout << in_message[thread_number] << std::endl;
+
         if (in_message[thread_number] == "0")
         {
             std::cout << "Client Exited." << std::endl;
             break;
         }
 
-        // std::this_thread::sleep_for(std::chrono::milliseconds(100));
         in_message_ready[thread_number] = true;
+
 
         while (!out_message_ready[thread_number])
         {
@@ -302,7 +306,7 @@ int server_thread()
     int sockert_file_descriptor, connection, bind_status, connection_status;
     char recvbuf[DEFAULT_BUFLEN];
 
-    // Создадим сокет
+    // Nicaaaei nieao
     sockert_file_descriptor = socket(AF_INET, SOCK_STREAM, 0);
     if (sockert_file_descriptor == -1)
     {
@@ -311,18 +315,18 @@ int server_thread()
     }
     //
     serveraddress.sin_addr.s_addr = INADDR_ANY;
-    // Зададим номер порта для связи
+    // Caaaaei iiia? ii?oa aey nayce
     serveraddress.sin_port = htons(DEFAULT_PORT);
-    // Используем IPv4
+    // Eniieucoai IPv4
     serveraddress.sin_family = AF_INET;
-    // Привяжем сокет
+    // I?eay?ai nieao
     bind_status = bind(sockert_file_descriptor, (struct sockaddr*)&serveraddress, sizeof(serveraddress));
     if (bind_status == -1)
     {
         std::cout << "Socket binding failed.!" << std::endl;
         exit(1);
     }
-    // Поставим сервер на прием данных
+    // Iinoaaei na?aa? ia i?eai aaiiuo
     connection_status = listen(sockert_file_descriptor, 5);
     if (connection_status == -1)
     {
@@ -357,13 +361,15 @@ auto main_loop(Application* app)
 {
     while (continue_flag)
     {
-        for (auto i = 0; i < out_message_ready.size(); ++i)
+            for (auto i = 0; i < out_message_ready.size(); ++i)
         {
+
             if (!in_message_ready[i]) continue;
+
 
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-            // std::cout << "In message: " << in_message[i] << std::endl;
+            std::cout << "In message: " << in_message[i] << " " << i << std::endl;
 
             app->reaction(in_message[i], out_message[i], i);  //
 
@@ -414,3 +420,4 @@ auto Server::setBufferSize(int index, size_t size) const -> void
     buffer_size[index] = size;
     need_buffer_resize[index] = true;
 }
+
