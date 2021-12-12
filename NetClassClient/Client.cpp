@@ -253,7 +253,7 @@ int client_thread()
         }
         bzero(recvbuf, sizeof(recvbuf));
         // Æäåì îòâåòà îò ñåðâåðà
-        ssize_t length = read(socket_file_descriptor, recvbuf, sizeof(recvbuf));
+        ssize_t length = read(socket_file_descriptor, recvbuf, current_buffer_size);
         if (length > 0)
         {
             message = std::string(recvbuf, length);
