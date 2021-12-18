@@ -30,21 +30,21 @@ const char* DEFAULT_PORT = "27777";
 const int DEFAULT_PORT = 27777;  // A
 #endif  //  _WIN32
 
-std::vector<std::thread> clients;
-std::vector<std::string> cash_message{};
-std::vector<size_t> buffer_size{};
-std::vector<bool> need_buffer_resize{};
-std::vector<std::string> in_message{};
-std::vector<bool> in_message_ready{};
-std::vector<std::string> out_message{};
-std::vector<bool> out_message_ready{};
+//std::vector<std::thread> clients;
+//std::vector<std::string> cash_message{};
+//std::vector<size_t> buffer_size{};
+//std::vector<bool> need_buffer_resize{};
+//std::vector<std::string> in_message{};
+//std::vector<bool> in_message_ready{};
+//std::vector<std::string> out_message{};
+//std::vector<bool> out_message_ready{};
+//
+//static int thread_count = 0;
+//volatile static bool continue_flag = true;
 
-static int thread_count = 0;
-volatile static bool continue_flag = true;
 
 #ifdef _WIN32
-
-auto server_thread(int thread_number) -> void
+auto Server::server_thread(int thread_number) -> void
 {
     cash_message.push_back("U");
     buffer_size.push_back(DEFAULT_BUFLEN);
@@ -134,7 +134,7 @@ auto server_thread(int thread_number) -> void
     // No longer need server socket
     closesocket(ListenSocket);
 
-    clients.emplace_back(&server_thread, thread_count);
+    clients.emplace_back(&Server::server_thread, this, thread_count);
     ++thread_count;
     // std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -182,7 +182,7 @@ auto server_thread(int thread_number) -> void
             }
 
             std::this_thread::sleep_for(std::chrono::milliseconds(50));  // NEED
-                                                                         // std::cout << out_message[thread_number] << std::endl;
+            // std::cout << out_message[thread_number] << std::endl;
 
             std::copy(out_message[thread_number].begin(), out_message[thread_number].end(), recvbuf);
             // Echo the buffer back to the sender
@@ -233,7 +233,7 @@ auto server_thread(int thread_number) -> void
 }
 
 #elif defined __linux__
-auto client_loop(int thread_number, int connection) -> void
+auto Server::client_loop(int thread_number, int connection) -> void
 {
     cash_message.push_back("U");
     buffer_size.push_back(DEFAULT_BUFLEN);
@@ -301,7 +301,7 @@ auto client_loop(int thread_number, int connection) -> void
 
     return;
 }
-int server_thread()
+auto Server::server_thread() -> int
 {
     struct sockaddr_in serveraddress, client;
     socklen_t length;
@@ -348,7 +348,7 @@ int server_thread()
             std::cout << "Server is unable to accept the data from client.!" << std::endl;
             exit(1);
         }
-        clients.emplace_back(&client_loop, thread_count, connection);
+        clients.emplace_back(&Server::client_loop, this, thread_count, connection);
         ++thread_count;
         clients.back().detach();
     }
@@ -359,7 +359,7 @@ int server_thread()
 
 #endif  // _WIN32
 
-auto main_loop(Application* app)
+auto Server::main_loop(Application* app) -> void
 {
     while (continue_flag)
     {
@@ -368,13 +368,13 @@ auto main_loop(Application* app)
 
             if (!in_message_ready[i]) continue;
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            // std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
             // std::cout << "In message: " << in_message[i] << " " << i << std::endl;
 
             app->reaction(in_message[i], out_message[i], i);  //
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            // std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
             in_message_ready[i] = false;
             out_message_ready[i] = true;
@@ -397,15 +397,15 @@ auto Server::run() -> void
 {
     std::string msg{};
 #ifdef _WIN32
-    clients.emplace_back(&server_thread, thread_count);
+    clients.emplace_back(&Server::server_thread, this, thread_count);
     ++thread_count;
     clients.back().detach();
 #elif defined __linux__
-    std::thread t(&server_thread);
+    std::thread t(&Server::server_thread, this);
     t.detach();
 #endif  // _WIN32
 
-    std::thread t1(&main_loop, _app);
+    std::thread t1(&Server::main_loop, this, _app);
     t1.detach();
 
     return;
@@ -416,13 +416,13 @@ auto Server::setContinueFlag(bool flag) -> void
     continue_flag = flag;
 }
 
-auto Server::setBufferSize(int index, size_t size) const -> void
+auto Server::setBufferSize(int index, size_t size) -> void
 {
     buffer_size[index] = size;
     need_buffer_resize[index] = true;
 }
 
-auto Server::setCashMessage(const std::string& msg, int thread_num) const -> void
+auto Server::setCashMessage(const std::string& msg, int thread_num) -> void
 {
     cash_message[thread_num] = msg;
 }

@@ -31,18 +31,17 @@ const char* DEFAULT_PORT = "27777";
 const int DEFAULT_PORT = 27777;  // Á
 #endif  //  _WIN32
 
-const int DEFAULT_BUFLEN = 1024;
 
-volatile bool out_message_ready{false};
-volatile bool in_message_ready{false};
-volatile bool server_error{false};
-std::string message{};
-volatile size_t buffer_size{DEFAULT_BUFLEN};
-volatile bool need_buffer_resize{true};
+//volatile bool out_message_ready{false};
+//volatile bool in_message_ready{false};
+//volatile bool server_error{false};
+//std::string message{};
+//volatile size_t buffer_size{DEFAULT_BUFLEN};
+//volatile bool need_buffer_resize{true};
 
 #ifdef _WIN32
 
-int client_thread()
+auto Client::client_thread() -> int
 {
     WSADATA wsaData;
     SOCKET ConnectSocket = INVALID_SOCKET;
@@ -182,7 +181,7 @@ int client_thread()
 }
 
 #elif defined __linux__
-int client_thread()
+auto Client::client_thread() -> int
 {
 
     int socket_file_descriptor, connection;
@@ -271,7 +270,7 @@ int client_thread()
 
 auto Client::run() -> void
 {
-    std::thread tr(&client_thread);
+    std::thread tr(&Client::client_thread, this);
     tr.detach();
 }
 
@@ -280,7 +279,7 @@ auto Client::getOutMessageReady() const -> bool
     return out_message_ready;
 }
 
-auto Client::setOutMessageReady(bool flag) const -> void
+auto Client::setOutMessageReady(bool flag) -> void
 {
     out_message_ready = flag;
 }
@@ -290,7 +289,7 @@ auto Client::getInMessageReady() const -> bool
     return in_message_ready;
 }
 
-auto Client::setInMessageReady(bool flag) const -> void
+auto Client::setInMessageReady(bool flag) -> void
 {
     in_message_ready = flag;
 }
@@ -300,7 +299,7 @@ auto Client::getMessage() -> const std::string&
     return message;
 }
 
-auto Client::setMessage(const std::string& msg) const -> void
+auto Client::setMessage(const std::string& msg) -> void
 {
     message = msg;
 }
@@ -310,7 +309,7 @@ auto Client::getServerError() const -> bool
     return server_error;
 }
 
-auto Client::setBufferSize(size_t size) const -> void
+auto Client::setBufferSize(size_t size) -> void
 {
     buffer_size = size;
     need_buffer_resize = true;
