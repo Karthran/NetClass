@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <memory>
 
 const int DEFAULT_BUFLEN = 1024;
 
@@ -20,7 +21,7 @@ private:
     volatile bool _out_message_ready{false};
     volatile bool _in_message_ready{false};
     volatile bool _server_error{false};
-    char* _exchange_buffer{nullptr};
+    std::shared_ptr<char[]> _exchange_buffer{nullptr};
     volatile size_t _exchange_buffer_size{DEFAULT_BUFLEN};
     volatile bool _need_exchange_buffer_resize{true};
     size_t _message_length{0};

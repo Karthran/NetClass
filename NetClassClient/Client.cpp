@@ -32,13 +32,6 @@ const char* DEFAULT_PORT = "27777";
 const int DEFAULT_PORT = 27777;  // Á
 #endif  //  _WIN32
 
-// volatile bool out_message_ready{false};
-// volatile bool in_message_ready{false};
-// volatile bool server_error{false};
-// std::string message{};
-// volatile size_t buffer_size{DEFAULT_BUFLEN};
-// volatile bool need_buffer_resize{true};
-
 #ifdef _WIN32
 
 auto Client::client_thread() -> int
@@ -113,8 +106,9 @@ auto Client::client_thread() -> int
             if (current_buffer_size < _exchange_buffer_size)
             {
                 current_buffer_size = _exchange_buffer_size;
-                delete[] _exchange_buffer;
-                _exchange_buffer = new char[current_buffer_size];
+//                delete[] _exchange_buffer;
+
+                _exchange_buffer = std::shared_ptr<char[]>(new char[current_buffer_size]);/////////////////////////////////////
 
                 // std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
             }
@@ -130,7 +124,7 @@ auto Client::client_thread() -> int
         //       std::copy(message.begin(), message.end(), recvbuf);
         //       iResult = send(ConnectSocket, recvbuf, message.size(), 0);
 
-        iResult = send(ConnectSocket, _exchange_buffer, _message_length, 0);  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        iResult = send(ConnectSocket, _exchange_buffer.get(), _message_length, 0);  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         if (iResult == SOCKET_ERROR)
         {
@@ -151,7 +145,7 @@ auto Client::client_thread() -> int
             break;
         }
 
-        iResult = recv(ConnectSocket, _exchange_buffer, current_buffer_size, 0);
+        iResult = recv(ConnectSocket, _exchange_buffer.get(), current_buffer_size, 0);///////////////////////////////////////
         if (iResult > 0)
         {
             // printf("Bytes received: %d\n", iResult);
@@ -175,7 +169,7 @@ auto Client::client_thread() -> int
     closesocket(ConnectSocket);
     WSACleanup();
 
-    delete[] _exchange_buffer;
+  _exchange_buffer = nullptr; ////////////////////////////////////////////////////////////////////////////
 
     return 0;
 }
@@ -296,7 +290,7 @@ auto Client::setInMessageReady(bool flag) -> void
 
 auto Client::getMessage() -> const char*
 {
-    return _exchange_buffer;
+    return _exchange_buffer.get();
 }
 
 auto Client::setMessage(const char* msg, size_t msg_length) -> void
