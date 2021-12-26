@@ -46,17 +46,17 @@ const int DEFAULT_PORT = 27777;  // A
 auto Server::server_thread(int thread_number) -> void
 {
     // TODO mutex
-    cash_message.push_back(nullptr);        ////////////////////////////////////////////////////////////
-    cash_message_size.push_back(0);         ///////////////////////////////////////////////////////////
-    cash_message_buffer_size.push_back(0);  ///////////////////////////////////////////////////
-    buffer_size.push_back(DEFAULT_BUFLEN);
-    need_buffer_resize.push_back(true);
-    in_message.push_back(nullptr);  ///////////////////////////////////////////////////////
-    in_message_size.push_back(0);  ////////////////////////////////////////////////////////
-    msg_from_client_size.push_back(
+    _cash_message.push_back(nullptr);        ////////////////////////////////////////////////////////////
+    _cash_message_size.push_back(0);         ///////////////////////////////////////////////////////////
+    _cash_message_buffer_size.push_back(0);  ///////////////////////////////////////////////////
+    _exchange_buffer_size.push_back(DEFAULT_BUFLEN);
+    _need_buffer_resize.push_back(true);
+    _exchange_message.push_back(nullptr);  ///////////////////////////////////////////////////////
+    _in_message_size.push_back(0);  ////////////////////////////////////////////////////////
+    _msg_from_client_size.push_back(
         0);  //////////////////////////////////////////////////////////////////////////////////////////////////////
-    in_message_ready.push_back(false);
-    out_message_ready.push_back(false);
+    _in_message_ready.push_back(false);
+    _out_message_ready.push_back(false);
     // std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     WSADATA wsaData;
@@ -138,11 +138,11 @@ auto Server::server_thread(int thread_number) -> void
     // No longer need server socket
     closesocket(ListenSocket);
 
-    clients.emplace_back(&Server::server_thread, this, thread_count);
+    _clients.emplace_back(&Server::server_thread, this, thread_count);
     ++thread_count;
     // std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    clients.back().detach();
+    _clients.back().detach();
 
     // Receive until the peer shuts down the connection
     char* recvbuf{nullptr};
@@ -151,24 +151,24 @@ auto Server::server_thread(int thread_number) -> void
 
     do
     {
-        if (need_buffer_resize[thread_number])
+        if (_need_buffer_resize[thread_number])
         {
-            if (current_buffer_size < buffer_size[thread_number])
+            if (current_buffer_size < _exchange_buffer_size[thread_number])
             {
-                current_buffer_size = buffer_size[thread_number];
+                current_buffer_size = _exchange_buffer_size[thread_number];
                 // delete[] recvbuf;
                 // recvbuf = new char[current_buffer_size];
-                delete[] in_message[thread_number];
-                in_message[thread_number] = new char[current_buffer_size];
+                delete[] _exchange_message[thread_number];
+                _exchange_message[thread_number] = new char[current_buffer_size];
 
                 // in_message[thread_number] = std::make_shared<char*>(new char[current_buffer_size]);
 
                 // std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
             }
-            need_buffer_resize[thread_number] = false;
+            _need_buffer_resize[thread_number] = false;
         }
 
-        iResult = recv(ClientSocket, in_message[thread_number], current_buffer_size, 0);
+        iResult = recv(ClientSocket, _exchange_message[thread_number], current_buffer_size, 0);
         if (iResult > 0)
         {
             // printf("Bytes received: %d\n", iResult);
@@ -176,17 +176,17 @@ auto Server::server_thread(int thread_number) -> void
             // in_message[thread_number] = std::string(recvbuf, iResult);
 
             // std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            in_message_ready[thread_number] = true;
+            _in_message_ready[thread_number] = true;
 
             // std::cout << thread_number << in_message[thread_number] << std::endl;
 
-            if (in_message[thread_number] == "0")
+            if (_exchange_message[thread_number] == "0")
             {
                 std::cout << "Client Exited." << std::endl;
                 break;
             }
 
-            while (!out_message_ready[thread_number])
+            while (!_out_message_ready[thread_number])
             {
             }
 
@@ -195,7 +195,7 @@ auto Server::server_thread(int thread_number) -> void
 
             // std::copy(out_message[thread_number].begin(), out_message[thread_number].end(), recvbuf);
             // Echo the buffer back to the sender
-            iSendResult = send(ClientSocket, in_message[thread_number], in_message_size[thread_number], 0);
+            iSendResult = send(ClientSocket, _exchange_message[thread_number], _in_message_size[thread_number], 0);
             if (iSendResult == SOCKET_ERROR)
             {
                 printf("send failed with error: %d\n", WSAGetLastError());
@@ -207,7 +207,7 @@ auto Server::server_thread(int thread_number) -> void
 
             // std::cout << thread_number << out_message[thread_number] << std::endl;
 
-            out_message_ready[thread_number] = false;
+            _out_message_ready[thread_number] = false;
         }
         else if (iResult == 0)
             printf("Connection closing...\n");
@@ -247,10 +247,10 @@ auto Server::client_loop(int thread_number, int connection) -> void
     cash_message.push_back("U");
     buffer_size.push_back(DEFAULT_BUFLEN);
     need_buffer_resize.push_back(true);
-    in_message.push_back("U");
-    in_message_ready.push_back(false);
+    _exchange_message.push_back("U");
+    _in_message_ready.push_back(false);
     out_message.push_back("U");
-    out_message_ready.push_back(false);
+    _out_message_ready.push_back(false);
 
     char* recvbuf{nullptr};
     size_t current_buffer_size{0};
@@ -274,22 +274,22 @@ auto Server::client_loop(int thread_number, int connection) -> void
 
         //      bzero(recvbuf, DEFAULT_BUFLEN);
         ssize_t length = read(connection, recvbuf, current_buffer_size);
-        in_message[thread_number] = std::string(recvbuf, length);
+        _exchange_message[thread_number] = std::string(recvbuf, length);
 
         // std::this_thread::sleep_for(std::chrono::milliseconds(100));
         //        in_message_ready[thread_number] = true;
 
         // std::cout << in_message[thread_number] << std::endl;
 
-        if (in_message[thread_number] == "0")
+        if (_exchange_message[thread_number] == "0")
         {
             std::cout << "Client Exited." << std::endl;
             break;
         }
 
-        in_message_ready[thread_number] = true;
+        _in_message_ready[thread_number] = true;
 
-        while (!out_message_ready[thread_number])
+        while (!_out_message_ready[thread_number])
         {
         }
 
@@ -299,7 +299,7 @@ auto Server::client_loop(int thread_number, int connection) -> void
         ssize_t bytes = write(connection, recvbuf, out_message[thread_number].size());
         if (bytes >= 0)
         {
-            out_message_ready[thread_number] = false;
+            _out_message_ready[thread_number] = false;
         }
     }
     // close socket
@@ -372,21 +372,21 @@ auto Server::main_loop(Application* app) -> void
 {
     while (continue_flag)
     {
-        for (auto i = 0; i < out_message_ready.size(); ++i)
+        for (auto i = 0; i < _out_message_ready.size(); ++i)
         {
 
-            if (!in_message_ready[i]) continue;
+            if (!_in_message_ready[i]) continue;
 
             // std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
             // std::cout << "In message: " << in_message[i] << " " << i << std::endl;
 
-            app->reaction(in_message[i], i);  //
+            app->reaction(_exchange_message[i], i);  //
 
             // std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-            in_message_ready[i] = false;
-            out_message_ready[i] = true;
+            _in_message_ready[i] = false;
+            _out_message_ready[i] = true;
         }
         // std::cin >> msg;
         // if (msg == "end") break;
@@ -406,9 +406,9 @@ auto Server::run() -> void
 {
     std::string msg{};
 #ifdef _WIN32
-    clients.emplace_back(&Server::server_thread, this, thread_count);
+    _clients.emplace_back(&Server::server_thread, this, thread_count);
     ++thread_count;
-    clients.back().detach();
+    _clients.back().detach();
 #elif defined __linux__
     std::thread t(&Server::server_thread, this);
     t.detach();
@@ -427,17 +427,17 @@ auto Server::setContinueFlag(bool flag) -> void
 
 auto Server::setBufferSize(int index, size_t size) -> void
 {
-    buffer_size[index] = size;
-    need_buffer_resize[index] = true;
+    _exchange_buffer_size[index] = size;
+    _need_buffer_resize[index] = true;
 }
 
 auto Server::resizeCashMessageBuffer(int thread_num, size_t new_size) -> void
 {
-    if (new_size > cash_message_buffer_size[thread_num])
+    if (new_size > _cash_message_buffer_size[thread_num])
     {
-        delete[] cash_message[thread_num];
-        cash_message[thread_num] = new char[new_size];
-        cash_message_buffer_size[thread_num] = new_size;
+        delete[] _cash_message[thread_num];
+        _cash_message[thread_num] = new char[new_size];
+        _cash_message_buffer_size[thread_num] = new_size;
         std::cout << "Resize cash mesage to: " << new_size << std::endl;
     }
 }
