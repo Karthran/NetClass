@@ -52,9 +52,8 @@ auto Server::server_thread(int thread_number) -> void
     _exchange_buffer_size.push_back(DEFAULT_BUFLEN);
     _need_buffer_resize.push_back(true);
     _exchange_message.push_back(nullptr);  ///////////////////////////////////////////////////////
-    _in_message_size.push_back(0);  ////////////////////////////////////////////////////////
-    _msg_from_client_size.push_back(
-        0);  //////////////////////////////////////////////////////////////////////////////////////////////////////
+    _in_message_size.push_back(0);         ////////////////////////////////////////////////////////
+    _msg_from_client_size.push_back(0);    /////////////////////////////////////////////////////////////
     _in_message_ready.push_back(false);
     _out_message_ready.push_back(false);
     // std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -236,7 +235,8 @@ auto Server::server_thread(int thread_number) -> void
     WSACleanup();
 
     delete[] recvbuf;
-    // std::cout << "Clear recvbuf" << std::endl;
+    _cash_message[thread_number] = nullptr;
+    std::cout << "Clear servers buffers" << std::endl;
 
     return;
 }
@@ -435,8 +435,8 @@ auto Server::resizeCashMessageBuffer(int thread_num, size_t new_size) -> void
 {
     if (new_size > _cash_message_buffer_size[thread_num])
     {
-        delete[] _cash_message[thread_num];
-        _cash_message[thread_num] = new char[new_size];
+        //delete[] _cash_message[thread_num];
+        _cash_message[thread_num] = std::shared_ptr<char[]>(new char[new_size]);
         _cash_message_buffer_size[thread_num] = new_size;
         std::cout << "Resize cash mesage to: " << new_size << std::endl;
     }
