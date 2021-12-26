@@ -2,6 +2,7 @@
 #include <vector>
 #include <thread>
 #include <string>
+#include <memory>
 
 const int DEFAULT_BUFLEN = 1024;
 
@@ -18,7 +19,7 @@ public:
     auto setMsgFromClientSize(size_t size, int thread_num) -> void { _msg_from_client_size[thread_num] = size; }
     auto getMsgFromClientSize(int thread_num) -> size_t { return _msg_from_client_size[thread_num]; }
 
-    auto getCashMessagePtr(int thread_num) const -> char* { return _cash_message[thread_num]; }
+    auto getCashMessagePtr(int thread_num) const -> char* { return _cash_message[thread_num].get(); }
     auto getCashMessageSizeRef(int thread_num) -> size_t& { return _cash_message_size[thread_num]; }
     auto resizeCashMessageBuffer(int thread, size_t new_size) -> void;
 
@@ -27,7 +28,7 @@ private:
     bool _continue_flag{true};
 
     std::vector<std::thread> _clients;
-    std::vector<char*> _cash_message{};        //////////////////////////////////////////////////////////
+    std::vector<std::shared_ptr<char[]>> _cash_message{};        //////////////////////////////////////////////////////////
     std::vector<size_t> _cash_message_size{};  ////////////////////////////////////////////////////
     std::vector<size_t> _cash_message_buffer_size{};//////////////////////////////////////////////////
     std::vector<size_t> _exchange_buffer_size{};
