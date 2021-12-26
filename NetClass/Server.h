@@ -14,20 +14,28 @@ public:
     auto run() -> void;
     auto setContinueFlag(bool flag) -> void;
     auto setBufferSize(int index, size_t size) -> void;
-    auto setCashMessage(const std::string& msg, int thread_num) -> void;
-    auto getCashMessage(int thread_num) const -> const std::string&;
+    auto getMessageSizeRef(int thread_num) -> size_t& { return in_message_size[thread_num]; }
+    auto setMsgFromClientSize(size_t size, int thread_num) -> void { msg_from_client_size[thread_num] = size; }
+    auto getMsgFromClientSize(int thread_num) -> size_t { return msg_from_client_size[thread_num]; }
+
+    auto getCashMessagePtr(int thread_num) const -> char* { return cash_message[thread_num]; }
+    auto getCashMessageSizeRef(int thread_num) -> size_t& { return cash_message_size[thread_num]; }
+    auto resizeCashMessageBuffer(int thread, size_t new_size) -> void;
 
 private:
     Application* _app;
     bool _continue_flag{true};
 
     std::vector<std::thread> clients;
-    std::vector<std::string> cash_message{};
+    std::vector<char*> cash_message{};        //////////////////////////////////////////////////////////
+    std::vector<size_t> cash_message_size{};  ////////////////////////////////////////////////////
+    std::vector<size_t> cash_message_buffer_size{};//////////////////////////////////////////////////
     std::vector<size_t> buffer_size{};
     std::vector<bool> need_buffer_resize{};
-    std::vector<std::string> in_message{};
+    std::vector<char*> in_message;  ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    std::vector<size_t> in_message_size;       /////////////////////////////////////////////////////
+    std::vector<size_t> msg_from_client_size;  /////////////////////////////////////////////////////////////
     std::vector<bool> in_message_ready{};
-    std::vector<std::string> out_message{};
     std::vector<bool> out_message_ready{};
 
     int thread_count{0};
