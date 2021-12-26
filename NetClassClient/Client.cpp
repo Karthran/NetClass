@@ -4,6 +4,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <string.h>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -23,7 +24,7 @@ const char* DEFAULT_PORT = "27777";
 
 #elif defined __linux__
 #include <unistd.h>
-#include <string.h>
+//#include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -46,9 +47,7 @@ auto Client::client_thread() -> int
     WSADATA wsaData;
     SOCKET ConnectSocket = INVALID_SOCKET;
     struct addrinfo *result = NULL, *ptr = NULL, hints;
-    //   char recvbuf[DEFAULT_BUFLEN];
     int iResult;
-    //   int recvbuflen = DEFAULT_BUFLEN;
 
     // Initialize Winsock
     iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -105,7 +104,7 @@ auto Client::client_thread() -> int
         return 1;
     }
 
-    char* recvbuf{nullptr};
+    /*char* recvbuf{nullptr};*/
     size_t current_buffer_size{0};
 
     while (true)
@@ -129,8 +128,11 @@ auto Client::client_thread() -> int
 
         // std::cout <<"OutMessage: " << message << std::endl;
 
-        std::copy(message.begin(), message.end(), recvbuf);
-        iResult = send(ConnectSocket, recvbuf, message.size(), 0);
+ //       std::copy(message.begin(), message.end(), recvbuf);
+ //       iResult = send(ConnectSocket, recvbuf, message.size(), 0);
+
+        iResult = send(ConnectSocket, recvbuf, message_length, 0); // ADD message_length
+
         if (iResult == SOCKET_ERROR)
         {
             printf("send failed with error: %d\n", WSAGetLastError());
@@ -142,7 +144,7 @@ auto Client::client_thread() -> int
         out_message_ready = false;
         // printf("Bytes Sent: %ld\n", iResult);
 
-        if (message == "0")
+        if (message == "0") // TODO Check exit
         {
             // shutdown the connection since no more data will be sent
             iResult = shutdown(ConnectSocket, SD_SEND);
@@ -155,7 +157,7 @@ auto Client::client_thread() -> int
         if (iResult > 0)
         {
             // printf("Bytes received: %d\n", iResult);
-            message = std::string(recvbuf, iResult);
+            //message = std::string(recvbuf, iResult);
             in_message_ready = true;
 
             // std::cout << "InMessage: " << message << std::endl;
@@ -187,7 +189,7 @@ auto Client::client_thread() -> int
     int socket_file_descriptor, connection;
     struct sockaddr_in serveraddress, client;
 
-    char* recvbuf{nullptr};
+    //char* recvbuf{nullptr};
 
     // Ñîçäàäèì ñîêåò
     socket_file_descriptor = socket(AF_INET, SOCK_STREAM, 0);
@@ -294,14 +296,19 @@ auto Client::setInMessageReady(bool flag) -> void
     in_message_ready = flag;
 }
 
-auto Client::getMessage() -> const std::string&
+auto Client::getMessage() -> const char*
 {
-    return message;
+    return recvbuf;
 }
 
-auto Client::setMessage(const std::string& msg) -> void
+auto Client::setMessage(const char* msg, size_t msg_length) -> void
 {
-    message = msg;
+    message_length = msg_length;
+
+    for (auto i{0}; i < message_length; ++i)
+    {
+        recvbuf[i] = msg[i];
+    }
 }
 
 auto Client::getServerError() const -> bool

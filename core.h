@@ -12,4 +12,4 @@ enum class OperationCode
 	ERROR,
 };
 
-const int HEADER_SIZE = 256;
+const size_t HEADER_SIZE = 256;

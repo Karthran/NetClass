@@ -30,28 +30,32 @@ const char* DEFAULT_PORT = "27777";
 const int DEFAULT_PORT = 27777;  // A
 #endif  //  _WIN32
 
-//std::vector<std::thread> clients;
-//std::vector<std::string> cash_message{};
-//std::vector<size_t> buffer_size{};
-//std::vector<bool> need_buffer_resize{};
-//std::vector<std::string> in_message{};
-//std::vector<bool> in_message_ready{};
-//std::vector<std::string> out_message{};
-//std::vector<bool> out_message_ready{};
+// std::vector<std::thread> clients;
+// std::vector<std::string> cash_message{};
+// std::vector<size_t> buffer_size{};
+// std::vector<bool> need_buffer_resize{};
+// std::vector<std::string> in_message{};
+// std::vector<bool> in_message_ready{};
+// std::vector<std::string> out_message{};
+// std::vector<bool> out_message_ready{};
 //
-//static int thread_count = 0;
-//volatile static bool continue_flag = true;
-
+// static int thread_count = 0;
+// volatile static bool continue_flag = true;
 
 #ifdef _WIN32
 auto Server::server_thread(int thread_number) -> void
 {
-    cash_message.push_back("U");
+    // TODO mutex
+    cash_message.push_back(nullptr);        ////////////////////////////////////////////////////////////
+    cash_message_size.push_back(0);         ///////////////////////////////////////////////////////////
+    cash_message_buffer_size.push_back(0);  ///////////////////////////////////////////////////
     buffer_size.push_back(DEFAULT_BUFLEN);
     need_buffer_resize.push_back(true);
-    in_message.push_back("U");
+    in_message.push_back(nullptr);  ///////////////////////////////////////////////////////
+    in_message_size.push_back(0);  ////////////////////////////////////////////////////////
+    msg_from_client_size.push_back(
+        0);  //////////////////////////////////////////////////////////////////////////////////////////////////////
     in_message_ready.push_back(false);
-    out_message.push_back("U");
     out_message_ready.push_back(false);
     // std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -152,20 +156,25 @@ auto Server::server_thread(int thread_number) -> void
             if (current_buffer_size < buffer_size[thread_number])
             {
                 current_buffer_size = buffer_size[thread_number];
-                delete[] recvbuf;
-                recvbuf = new char[current_buffer_size];
+                // delete[] recvbuf;
+                // recvbuf = new char[current_buffer_size];
+                delete[] in_message[thread_number];
+                in_message[thread_number] = new char[current_buffer_size];
+
+                // in_message[thread_number] = std::make_shared<char*>(new char[current_buffer_size]);
 
                 // std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
             }
             need_buffer_resize[thread_number] = false;
         }
 
-        iResult = recv(ClientSocket, recvbuf, current_buffer_size, 0);
+        iResult = recv(ClientSocket, in_message[thread_number], current_buffer_size, 0);
         if (iResult > 0)
         {
             // printf("Bytes received: %d\n", iResult);
 
-            in_message[thread_number] = std::string(recvbuf, iResult);
+            // in_message[thread_number] = std::string(recvbuf, iResult);
+
             // std::this_thread::sleep_for(std::chrono::milliseconds(100));
             in_message_ready[thread_number] = true;
 
@@ -184,9 +193,9 @@ auto Server::server_thread(int thread_number) -> void
             std::this_thread::sleep_for(std::chrono::milliseconds(50));  // NEED
             // std::cout << out_message[thread_number] << std::endl;
 
-            std::copy(out_message[thread_number].begin(), out_message[thread_number].end(), recvbuf);
+            // std::copy(out_message[thread_number].begin(), out_message[thread_number].end(), recvbuf);
             // Echo the buffer back to the sender
-            iSendResult = send(ClientSocket, recvbuf, out_message[thread_number].size(), 0);
+            iSendResult = send(ClientSocket, in_message[thread_number], in_message_size[thread_number], 0);
             if (iSendResult == SOCKET_ERROR)
             {
                 printf("send failed with error: %d\n", WSAGetLastError());
@@ -372,7 +381,7 @@ auto Server::main_loop(Application* app) -> void
 
             // std::cout << "In message: " << in_message[i] << " " << i << std::endl;
 
-            app->reaction(in_message[i], out_message[i], i);  //
+            app->reaction(in_message[i], i);  //
 
             // std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
@@ -422,12 +431,18 @@ auto Server::setBufferSize(int index, size_t size) -> void
     need_buffer_resize[index] = true;
 }
 
-auto Server::setCashMessage(const std::string& msg, int thread_num) -> void
+auto Server::resizeCashMessageBuffer(int thread_num, size_t new_size) -> void
 {
-    cash_message[thread_num] = msg;
+    if (new_size > cash_message_buffer_size[thread_num])
+    {
+        delete[] cash_message[thread_num];
+        cash_message[thread_num] = new char[new_size];
+        cash_message_buffer_size[thread_num] = new_size;
+        std::cout << "Resize cash mesage to: " << new_size << std::endl;
+    }
 }
 
-auto Server::getCashMessage(int thread_num) const -> const std::string&
-{
-    return cash_message[thread_num];
-}
+// auto Server::setCashMessage(const std::string& msg, int thread_num) -> void
+//{
+//    cash_message[thread_num] = msg;
+//}

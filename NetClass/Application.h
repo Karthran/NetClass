@@ -4,17 +4,23 @@ class Application
 {
 public:
     auto run() -> void;
-    auto reaction(const std::string& message, std::string& out_message, int thread_num) -> void;
+    auto reaction(char * message, int thread_num) -> void;
 
 private:
     Server* _server{nullptr};
 
-    auto onCheckSize(const std::string& in_message, std::string& out_message, int thread_num) const -> void;
-    auto onCheckName(const std::string& in_message, std::string& out_message, int thread_num) -> void;
-    auto onStop(const std::string& in_message, std::string& out_message, int thread_num) -> void;
-    auto onError(std::string& out_message) const -> void;
+    auto onCheckSize(char* message, int thread_num) const -> void;
+    auto onCheckName(char* message, int thread_num) -> void;
+    auto onStop(char* message, int thread_num) -> void;
+    auto onError(char* message, int thread_num) const -> void;
+
+    auto addToBuffer(char* buffer, size_t& cur_msg_len, int value) const -> void;
+    auto addToBuffer(char* buffer, size_t& cur_msg_len, const char* string, size_t str_len) const -> void;
+
+    auto getFromBuffer(const char* buffer, size_t shift, int& value) const -> void;
+    auto getFromBuffer(const char* buffer, size_t shift, char* string, size_t str_len) const -> void;
 
     /////////////////////////DEBUG//////////////////////////////
-    auto checkName(const std::string& name) -> const std::string;
+    auto checkName(char* name, size_t name_size, int thread_num) -> void;
     /////////////////////////DEBUG//////////////////////////////
 };
