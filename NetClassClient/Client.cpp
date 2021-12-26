@@ -32,13 +32,12 @@ const char* DEFAULT_PORT = "27777";
 const int DEFAULT_PORT = 27777;  // Á
 #endif  //  _WIN32
 
-
-//volatile bool out_message_ready{false};
-//volatile bool in_message_ready{false};
-//volatile bool server_error{false};
-//std::string message{};
-//volatile size_t buffer_size{DEFAULT_BUFLEN};
-//volatile bool need_buffer_resize{true};
+// volatile bool out_message_ready{false};
+// volatile bool in_message_ready{false};
+// volatile bool server_error{false};
+// std::string message{};
+// volatile size_t buffer_size{DEFAULT_BUFLEN};
+// volatile bool need_buffer_resize{true};
 
 #ifdef _WIN32
 
@@ -58,7 +57,7 @@ auto Client::client_thread() -> int
     }
 
     ZeroMemory(&hints, sizeof(hints));
-                                             hints.ai_family = AF_UNSPEC;
+    hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
 
@@ -109,56 +108,55 @@ auto Client::client_thread() -> int
 
     while (true)
     {
-        if (need_buffer_resize)
+        if (_need_exchange_buffer_resize)
         {
-            if (current_buffer_size < buffer_size)
+            if (current_buffer_size < _exchange_buffer_size)
             {
-                current_buffer_size = buffer_size;
-                delete[] recvbuf;
-                recvbuf = new char[current_buffer_size];
+                current_buffer_size = _exchange_buffer_size;
+                delete[] _exchange_buffer;
+                _exchange_buffer = new char[current_buffer_size];
 
-                //std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
+                // std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
             }
-            need_buffer_resize = false;
+            _need_exchange_buffer_resize = false;
         }
 
-        while (!out_message_ready)
+        while (!_out_message_ready)
         {
         }
 
         // std::cout <<"OutMessage: " << message << std::endl;
 
- //       std::copy(message.begin(), message.end(), recvbuf);
- //       iResult = send(ConnectSocket, recvbuf, message.size(), 0);
+        //       std::copy(message.begin(), message.end(), recvbuf);
+        //       iResult = send(ConnectSocket, recvbuf, message.size(), 0);
 
-        iResult = send(ConnectSocket, recvbuf, message_length, 0); // ADD message_length
+        iResult = send(ConnectSocket, _exchange_buffer, _message_length, 0);  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         if (iResult == SOCKET_ERROR)
         {
             printf("send failed with error: %d\n", WSAGetLastError());
             closesocket(ConnectSocket);
             WSACleanup();
-            server_error = true;
+            _server_error = true;
             break;
         }
-        out_message_ready = false;
+        _out_message_ready = false;
         // printf("Bytes Sent: %ld\n", iResult);
 
-        if (message == "0") // TODO Check exit
+        if (false /*message == "0"*/)  // TODO Check exit !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         {
             // shutdown the connection since no more data will be sent
             iResult = shutdown(ConnectSocket, SD_SEND);
-            server_error = true;
+            _server_error = true;
             break;
-
         }
 
-        iResult = recv(ConnectSocket, recvbuf, current_buffer_size, 0);
+        iResult = recv(ConnectSocket, _exchange_buffer, current_buffer_size, 0);
         if (iResult > 0)
         {
             // printf("Bytes received: %d\n", iResult);
-            //message = std::string(recvbuf, iResult);
-            in_message_ready = true;
+            // message = std::string(recvbuf, iResult);
+            _in_message_ready = true;
 
             // std::cout << "InMessage: " << message << std::endl;
         }
@@ -177,7 +175,7 @@ auto Client::client_thread() -> int
     closesocket(ConnectSocket);
     WSACleanup();
 
-    delete[] recvbuf;
+    delete[] _exchange_buffer;
 
     return 0;
 }
@@ -189,7 +187,7 @@ auto Client::client_thread() -> int
     int socket_file_descriptor, connection;
     struct sockaddr_in serveraddress, client;
 
-    //char* recvbuf{nullptr};
+    // char* recvbuf{nullptr};
 
     // Ñîçäàäèì ñîêåò
     socket_file_descriptor = socket(AF_INET, SOCK_STREAM, 0);
@@ -225,7 +223,7 @@ auto Client::client_thread() -> int
                 delete[] recvbuf;
                 recvbuf = new char[current_buffer_size];
 
-                //std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
+                // std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
             }
             need_buffer_resize = false;
         }
@@ -233,14 +231,14 @@ auto Client::client_thread() -> int
         {
         }
 
-//        bzero(recvbuf, sizeof(recvbuf));
+        //        bzero(recvbuf, sizeof(recvbuf));
         std::copy(message.begin(), message.end(), recvbuf);
 
-//        ssize_t bytes = write(socket_file_descriptor, recvbuf, message.size());
+        //        ssize_t bytes = write(socket_file_descriptor, recvbuf, message.size());
         if (message == "0")
         {
             write(socket_file_descriptor, recvbuf, message.size());
-//            std::cout << "Client Exit." << std::endl;
+            //            std::cout << "Client Exit." << std::endl;
             server_error = true;
             break;
         }
@@ -278,47 +276,46 @@ auto Client::run() -> void
 
 auto Client::getOutMessageReady() const -> bool
 {
-    return out_message_ready;
+    return _out_message_ready;
 }
 
 auto Client::setOutMessageReady(bool flag) -> void
 {
-    out_message_ready = flag;
+    _out_message_ready = flag;
 }
 
 auto Client::getInMessageReady() const -> bool
 {
-    return in_message_ready;
+    return _in_message_ready;
 }
 
 auto Client::setInMessageReady(bool flag) -> void
 {
-    in_message_ready = flag;
+    _in_message_ready = flag;
 }
 
 auto Client::getMessage() -> const char*
 {
-    return recvbuf;
+    return _exchange_buffer;
 }
 
 auto Client::setMessage(const char* msg, size_t msg_length) -> void
 {
-    message_length = msg_length;
+    _message_length = msg_length;
 
-    for (auto i{0}; i < message_length; ++i)
+    for (auto i{0}; i < _message_length; ++i)
     {
-        recvbuf[i] = msg[i];
+        _exchange_buffer[i] = msg[i];
     }
 }
 
 auto Client::getServerError() const -> bool
 {
-    return server_error;
+    return _server_error;
 }
 
 auto Client::setBufferSize(size_t size) -> void
 {
-    buffer_size = size;
-    need_buffer_resize = true;
+    _exchange_buffer_size = size;
+    _need_exchange_buffer_resize = true;
 }
-                                       
