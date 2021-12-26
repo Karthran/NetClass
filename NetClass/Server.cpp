@@ -144,7 +144,6 @@ auto Server::server_thread(int thread_number) -> void
     _clients.back().detach();
 
     // Receive until the peer shuts down the connection
-    char* recvbuf{nullptr};
 
     size_t current_buffer_size{0};
 
@@ -157,8 +156,8 @@ auto Server::server_thread(int thread_number) -> void
                 current_buffer_size = _exchange_buffer_size[thread_number];
                 // delete[] recvbuf;
                 // recvbuf = new char[current_buffer_size];
-                delete[] _exchange_message[thread_number];
-                _exchange_message[thread_number] = new char[current_buffer_size];
+                //delete[] _exchange_message[thread_number];
+                _exchange_message[thread_number] = std::shared_ptr<char[]>(new char[current_buffer_size]);
 
                 // in_message[thread_number] = std::make_shared<char*>(new char[current_buffer_size]);
 
@@ -167,7 +166,7 @@ auto Server::server_thread(int thread_number) -> void
             _need_buffer_resize[thread_number] = false;
         }
 
-        iResult = recv(ClientSocket, _exchange_message[thread_number], current_buffer_size, 0);
+        iResult = recv(ClientSocket, _exchange_message[thread_number].get(), current_buffer_size, 0);
         if (iResult > 0)
         {
             // printf("Bytes received: %d\n", iResult);
@@ -179,7 +178,7 @@ auto Server::server_thread(int thread_number) -> void
 
             // std::cout << thread_number << in_message[thread_number] << std::endl;
 
-            if (_exchange_message[thread_number] == "0")
+            if (false /*_exchange_message[thread_number] == "0"*/) // TODO EXIT conditions
             {
                 std::cout << "Client Exited." << std::endl;
                 break;
@@ -194,7 +193,7 @@ auto Server::server_thread(int thread_number) -> void
 
             // std::copy(out_message[thread_number].begin(), out_message[thread_number].end(), recvbuf);
             // Echo the buffer back to the sender
-            iSendResult = send(ClientSocket, _exchange_message[thread_number], _in_message_size[thread_number], 0);
+            iSendResult = send(ClientSocket, _exchange_message[thread_number].get(), _in_message_size[thread_number], 0);
             if (iSendResult == SOCKET_ERROR)
             {
                 printf("send failed with error: %d\n", WSAGetLastError());
@@ -234,7 +233,7 @@ auto Server::server_thread(int thread_number) -> void
     closesocket(ClientSocket);
     WSACleanup();
 
-    delete[] recvbuf;
+    _exchange_message[thread_number] = nullptr;
     _cash_message[thread_number] = nullptr;
     std::cout << "Clear servers buffers" << std::endl;
 
@@ -381,7 +380,7 @@ auto Server::main_loop(Application* app) -> void
 
             // std::cout << "In message: " << in_message[i] << " " << i << std::endl;
 
-            app->reaction(_exchange_message[i], i);  //
+            app->reaction(_exchange_message[i].get(), i);  //
 
             // std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
