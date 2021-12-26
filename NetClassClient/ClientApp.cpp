@@ -167,7 +167,11 @@ auto ClientApp::loop() -> void
         std::getline(std::cin, message);
         if (message == "end")
         {
-            talkToServer("0", 1);  // TODO std::to_string(static_cast<int>(OperationCode::STOP))
+            char stop[4];
+            size_t size{0};
+            addToBuffer(stop, size, static_cast<int>(OperationCode::STOP));
+
+            talkToServer(stop, size);  // TODO std::to_string(static_cast<int>(OperationCode::STOP))
             loop_flag = false;
             break;
         }
@@ -176,5 +180,6 @@ auto ClientApp::loop() -> void
         std::cout << message << std::endl;
     }
     std::cout << "Client stop!" << std::endl;
+
     return;
 }

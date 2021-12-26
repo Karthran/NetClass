@@ -6,6 +6,8 @@
 #include <vector>
 #include <string.h>
 
+#include "../core.h"
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 
@@ -106,9 +108,7 @@ auto Client::client_thread() -> int
             if (current_buffer_size < _exchange_buffer_size)
             {
                 current_buffer_size = _exchange_buffer_size;
-//                delete[] _exchange_buffer;
-
-                _exchange_buffer = std::shared_ptr<char[]>(new char[current_buffer_size]);/////////////////////////////////////
+                _exchange_buffer = std::shared_ptr<char[]>(new char[current_buffer_size]);  /////////////////////////////////////
 
                 // std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
             }
@@ -118,11 +118,6 @@ auto Client::client_thread() -> int
         while (!_out_message_ready)
         {
         }
-
-        // std::cout <<"OutMessage: " << message << std::endl;
-
-        //       std::copy(message.begin(), message.end(), recvbuf);
-        //       iResult = send(ConnectSocket, recvbuf, message.size(), 0);
 
         iResult = send(ConnectSocket, _exchange_buffer.get(), _message_length, 0);  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -137,7 +132,9 @@ auto Client::client_thread() -> int
         _out_message_ready = false;
         // printf("Bytes Sent: %ld\n", iResult);
 
-        if (false /*message == "0"*/)  // TODO Check exit !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        if (*(reinterpret_cast<int*>(_exchange_buffer.get())) ==
+            static_cast<int>(OperationCode::STOP))  // TODO Check exit
+                                                    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         {
             // shutdown the connection since no more data will be sent
             iResult = shutdown(ConnectSocket, SD_SEND);
@@ -145,7 +142,7 @@ auto Client::client_thread() -> int
             break;
         }
 
-        iResult = recv(ConnectSocket, _exchange_buffer.get(), current_buffer_size, 0);///////////////////////////////////////
+        iResult = recv(ConnectSocket, _exchange_buffer.get(), current_buffer_size, 0);  ///////////////////////////////////////
         if (iResult > 0)
         {
             // printf("Bytes received: %d\n", iResult);
@@ -169,8 +166,7 @@ auto Client::client_thread() -> int
     closesocket(ConnectSocket);
     WSACleanup();
 
-  _exchange_buffer = nullptr; ////////////////////////////////////////////////////////////////////////////
-
+    _exchange_buffer = nullptr;  ////////////////////////////////////////////////////////////////////////////
     return 0;
 }
 
@@ -181,9 +177,6 @@ auto Client::client_thread() -> int
     int socket_file_descriptor, connection;
     struct sockaddr_in serveraddress, client;
 
-    // char* recvbuf{nullptr};
-
-    // Ñîçäàäèì ñîêåò
     socket_file_descriptor = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_file_descriptor == -1)
     {
@@ -191,71 +184,60 @@ auto Client::client_thread() -> int
         exit(1);
     }
 
-    // Óñòàíîâèì àäðåñ ñåðâåðà
     serveraddress.sin_addr.s_addr = inet_addr("127.0.0.1");
-    // Çàäàäèì íîìåð ïîðòà
     serveraddress.sin_port = htons(DEFAULT_PORT);
-    // Èñïîëüçóåì IPv4
     serveraddress.sin_family = AF_INET;
-    // Óñòàíîâèì ñîåäèíåíèå ñ ñåðâåðîì
     connection = connect(socket_file_descriptor, (struct sockaddr*)&serveraddress, sizeof(serveraddress));
     if (connection == -1)
     {
         std::cout << "Connection with the server failed.!" << std::endl;
         exit(1);
     }
-    // Âçàèìîäåéñòâèå ñ ñåðâåðîì
+
     size_t current_buffer_size{0};
 
     while (1)
     {
-        if (need_buffer_resize)
+        if (_need_exchange_buffer_resize)
         {
-            if (current_buffer_size < buffer_size)
+            if (current_buffer_size < _exchange_buffer_size)
             {
-                current_buffer_size = buffer_size;
-                delete[] recvbuf;
-                recvbuf = new char[current_buffer_size];
-
-                // std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
+                current_buffer_size = _exchange_buffer_size;
+                _exchange_buffer = std::shared_ptr<char[]>(new char[current_buffer_size]);
             }
-            need_buffer_resize = false;
+            _need_exchange_buffer_resize = false;
         }
-        while (!out_message_ready)
+        while (!_out_message_ready)
         {
         }
 
-        //        bzero(recvbuf, sizeof(recvbuf));
-        std::copy(message.begin(), message.end(), recvbuf);
+        ssize_t bytes = write(socket_file_descriptor, _exchange_buffer.get(), _message_length);
 
-        //        ssize_t bytes = write(socket_file_descriptor, recvbuf, message.size());
-        if (message == "0")
+        if (bytes >= 0)
         {
-            write(socket_file_descriptor, recvbuf, message.size());
-            //            std::cout << "Client Exit." << std::endl;
-            server_error = true;
+            _out_message_ready = false;
+        }
+        else
+        {
+            _server_error = true;
             break;
         }
 
-        ssize_t bytes = write(socket_file_descriptor, recvbuf, message.size());
-
-        // Åñëè ïåðåäàëè >= 0  áàéò, çíà÷èò ïåðåñûëêà ïðîøëà óñïåøíî
-        if (bytes >= 0)
+        if (*(reinterpret_cast<int*>(_exchange_buffer.get())) == static_cast<int>(OperationCode::STOP))
         {
-            out_message_ready = false;
+            _server_error = true;
+            break;
         }
-        bzero(recvbuf, sizeof(recvbuf));
-        // Æäåì îòâåòà îò ñåðâåðà
-        ssize_t length = read(socket_file_descriptor, recvbuf, current_buffer_size);
+
+        ssize_t length = read(socket_file_descriptor, _exchange_buffer.get(), current_buffer_size);
         if (length > 0)
         {
-            message = std::string(recvbuf, length);
             in_message_ready = true;
         }
     }
-    // çàêðûâàåì ñîêåò, çàâåðøàåì ñîåäèíåíèå
+
     close(connection);
-    delete[] recvbuf;
+    _exchange_buffer = nullptr; 
 
     return 0;
 }
