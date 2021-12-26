@@ -4,6 +4,7 @@
 
 #include "Server.h"
 #include "Application.h"
+#include "../core.h"
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -29,18 +30,6 @@ const char* DEFAULT_PORT = "27777";
 
 const int DEFAULT_PORT = 27777;  // A
 #endif  //  _WIN32
-
-// std::vector<std::thread> clients;
-// std::vector<std::string> cash_message{};
-// std::vector<size_t> buffer_size{};
-// std::vector<bool> need_buffer_resize{};
-// std::vector<std::string> in_message{};
-// std::vector<bool> in_message_ready{};
-// std::vector<std::string> out_message{};
-// std::vector<bool> out_message_ready{};
-//
-// static int thread_count = 0;
-// volatile static bool continue_flag = true;
 
 #ifdef _WIN32
 auto Server::server_thread(int thread_number) -> void
@@ -154,14 +143,7 @@ auto Server::server_thread(int thread_number) -> void
             if (current_buffer_size < _exchange_buffer_size[thread_number])
             {
                 current_buffer_size = _exchange_buffer_size[thread_number];
-                // delete[] recvbuf;
-                // recvbuf = new char[current_buffer_size];
-                //delete[] _exchange_message[thread_number];
                 _exchange_message[thread_number] = std::shared_ptr<char[]>(new char[current_buffer_size]);
-
-                // in_message[thread_number] = std::make_shared<char*>(new char[current_buffer_size]);
-
-                // std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
             }
             _need_buffer_resize[thread_number] = false;
         }
@@ -169,16 +151,9 @@ auto Server::server_thread(int thread_number) -> void
         iResult = recv(ClientSocket, _exchange_message[thread_number].get(), current_buffer_size, 0);
         if (iResult > 0)
         {
-            // printf("Bytes received: %d\n", iResult);
-
-            // in_message[thread_number] = std::string(recvbuf, iResult);
-
-            // std::this_thread::sleep_for(std::chrono::milliseconds(100));
             _in_message_ready[thread_number] = true;
 
-            // std::cout << thread_number << in_message[thread_number] << std::endl;
-
-            if (false /*_exchange_message[thread_number] == "0"*/) // TODO EXIT conditions
+            if (*(reinterpret_cast<int*>(_exchange_message[thread_number].get())) == static_cast<int>(OperationCode::STOP))
             {
                 std::cout << "Client Exited." << std::endl;
                 break;
@@ -189,9 +164,7 @@ auto Server::server_thread(int thread_number) -> void
             }
 
             std::this_thread::sleep_for(std::chrono::milliseconds(50));  // NEED
-            // std::cout << out_message[thread_number] << std::endl;
 
-            // std::copy(out_message[thread_number].begin(), out_message[thread_number].end(), recvbuf);
             // Echo the buffer back to the sender
             iSendResult = send(ClientSocket, _exchange_message[thread_number].get(), _in_message_size[thread_number], 0);
             if (iSendResult == SOCKET_ERROR)
@@ -201,9 +174,6 @@ auto Server::server_thread(int thread_number) -> void
                 WSACleanup();
                 return;
             }
-            // printf("Bytes sent: %d\n", iSendResult);
-
-            // std::cout << thread_number << out_message[thread_number] << std::endl;
 
             _out_message_ready[thread_number] = false;
         }
@@ -235,7 +205,6 @@ auto Server::server_thread(int thread_number) -> void
 
     _exchange_message[thread_number] = nullptr;
     _cash_message[thread_number] = nullptr;
-    std::cout << "Clear servers buffers" << std::endl;
 
     return;
 }
@@ -434,7 +403,7 @@ auto Server::resizeCashMessageBuffer(int thread_num, size_t new_size) -> void
 {
     if (new_size > _cash_message_buffer_size[thread_num])
     {
-        //delete[] _cash_message[thread_num];
+        // delete[] _cash_message[thread_num];
         _cash_message[thread_num] = std::shared_ptr<char[]>(new char[new_size]);
         _cash_message_buffer_size[thread_num] = new_size;
         std::cout << "Resize cash mesage to: " << new_size << std::endl;
