@@ -15,7 +15,7 @@ public:
     auto run() -> void;
     auto setContinueFlag(bool flag) -> void;
     auto setBufferSize(int index, size_t size) -> void;
-    auto getMessageSizeRef(int thread_num) -> size_t& { return _in_message_size[thread_num]; }
+    auto getMessageSizeRef(int thread_num) -> size_t& { return _exchange_message_size[thread_num]; }
     auto setMsgFromClientSize(size_t size, int thread_num) -> void { _msg_from_client_size[thread_num] = size; }
     auto getMsgFromClientSize(int thread_num) -> size_t { return _msg_from_client_size[thread_num]; }
 
@@ -34,7 +34,7 @@ private:
     std::vector<size_t> _exchange_buffer_size{};
     std::vector<bool> _need_buffer_resize{};
     std::vector<std::shared_ptr<char[]>> _exchange_message;  /////////////////////////////////////////////////////////
-    std::vector<size_t> _in_message_size;                    /////////////////////////////////////////////////////
+    std::vector<size_t> _exchange_message_size;              /////////////////////////////////////////////////////
     std::vector<size_t> _msg_from_client_size;               /////////////////////////////////////////////////////////////
     std::vector<bool> _in_message_ready{};
     std::vector<bool> _out_message_ready{};

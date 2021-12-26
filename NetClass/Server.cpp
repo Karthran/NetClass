@@ -41,7 +41,7 @@ auto Server::server_thread(int thread_number) -> void
     _exchange_buffer_size.push_back(DEFAULT_BUFLEN);
     _need_buffer_resize.push_back(true);
     _exchange_message.push_back(nullptr);  ///////////////////////////////////////////////////////
-    _in_message_size.push_back(0);         ////////////////////////////////////////////////////////
+    _exchange_message_size.push_back(0);         ////////////////////////////////////////////////////////
     _msg_from_client_size.push_back(0);    /////////////////////////////////////////////////////////////
     _in_message_ready.push_back(false);
     _out_message_ready.push_back(false);
@@ -166,7 +166,7 @@ auto Server::server_thread(int thread_number) -> void
             std::this_thread::sleep_for(std::chrono::milliseconds(50));  // NEED
 
             // Echo the buffer back to the sender
-            iSendResult = send(ClientSocket, _exchange_message[thread_number].get(), _in_message_size[thread_number], 0);
+            iSendResult = send(ClientSocket, _exchange_message[thread_number].get(), _exchange_message_size[thread_number], 0);
             if (iSendResult == SOCKET_ERROR)
             {
                 printf("send failed with error: %d\n", WSAGetLastError());
@@ -212,59 +212,50 @@ auto Server::server_thread(int thread_number) -> void
 #elif defined __linux__
 auto Server::client_loop(int thread_number, int connection) -> void
 {
-    cash_message.push_back("U");
-    buffer_size.push_back(DEFAULT_BUFLEN);
-    need_buffer_resize.push_back(true);
-    _exchange_message.push_back("U");
+    _cash_message.push_back(nullptr);        
+    _cash_message_size.push_back(0);         
+    _cash_message_buffer_size.push_back(0);  
+    _exchange_buffer_size.push_back(DEFAULT_BUFLEN);
+    _need_buffer_resize.push_back(true);
+    _exchange_message.push_back(nullptr);  
+    _exchange_message_size.push_back(0);         
+    _msg_from_client_size.push_back(0);   
     _in_message_ready.push_back(false);
-    out_message.push_back("U");
     _out_message_ready.push_back(false);
 
-    char* recvbuf{nullptr};
     size_t current_buffer_size{0};
 
     // Communication Establishment
     std::string message{};
     while (1)
     {
-        if (need_buffer_resize[thread_number])
+        if (_need_buffer_resize[thread_number])
         {
-            if (current_buffer_size < buffer_size[thread_number])
+            if (current_buffer_size < _exchange_buffer_size[thread_number])
             {
-                current_buffer_size = buffer_size[thread_number];
-                delete[] recvbuf;
-                recvbuf = new char[current_buffer_size];
-
-                // std::cout << " New Buffer Size: " << current_buffer_size << std::endl;
+                current_buffer_size = _exchange_buffer_size[thread_number];
+                _exchange_message[thread_number] = std::shared_ptr<char[]>(new char[current_buffer_size]);
             }
-            need_buffer_resize[thread_number] = false;
+            _need_buffer_resize[thread_number] = false;
         }
 
-        //      bzero(recvbuf, DEFAULT_BUFLEN);
-        ssize_t length = read(connection, recvbuf, current_buffer_size);
-        _exchange_message[thread_number] = std::string(recvbuf, length);
+        ssize_t length = read(connection, _exchange_message[thread_number].get(), current_buffer_size);
 
-        // std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        //        in_message_ready[thread_number] = true;
+         _in_message_ready[thread_number] = true;
 
-        // std::cout << in_message[thread_number] << std::endl;
-
-        if (_exchange_message[thread_number] == "0")
+        if (*(reinterpret_cast<int*>(_exchange_message[thread_number].get())) == static_cast<int>(OperationCode::STOP))
         {
             std::cout << "Client Exited." << std::endl;
             break;
         }
-
-        _in_message_ready[thread_number] = true;
 
         while (!_out_message_ready[thread_number])
         {
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(50));  // NEED
-        std::copy(out_message[thread_number].begin(), out_message[thread_number].end(), recvbuf);
-
-        ssize_t bytes = write(connection, recvbuf, out_message[thread_number].size());
+        
+        ssize_t bytes = write(connection, _exchange_message[thread_number].get(), _exchange_message_size[thread_number]);
         if (bytes >= 0)
         {
             _out_message_ready[thread_number] = false;
@@ -273,8 +264,8 @@ auto Server::client_loop(int thread_number, int connection) -> void
     // close socket
     close(connection);
 
-    delete[] recvbuf;
-    // std::cout << "Clear recvbuf" << std::endl;
+   _exchange_message[thread_number] = nullptr;
+    _cash_message[thread_number] = nullptr;
 
     return;
 }
@@ -283,9 +274,7 @@ auto Server::server_thread() -> int
     struct sockaddr_in serveraddress, client;
     socklen_t length;
     int sockert_file_descriptor, connection, bind_status, connection_status;
-    char recvbuf[DEFAULT_BUFLEN];
 
-    // Nicaaaei nieao
     sockert_file_descriptor = socket(AF_INET, SOCK_STREAM, 0);
     if (sockert_file_descriptor == -1)
     {
@@ -294,18 +283,14 @@ auto Server::server_thread() -> int
     }
     //
     serveraddress.sin_addr.s_addr = INADDR_ANY;
-    // Caaaaei iiia? ii?oa aey nayce
     serveraddress.sin_port = htons(DEFAULT_PORT);
-    // Eniieucoai IPv4
     serveraddress.sin_family = AF_INET;
-    // I?eay?ai nieao
     bind_status = bind(sockert_file_descriptor, (struct sockaddr*)&serveraddress, sizeof(serveraddress));
     if (bind_status == -1)
     {
         std::cout << "Socket binding failed.!" << std::endl;
         exit(1);
     }
-    // Iinoaaei na?aa? ia i?eai aaiiuo
     connection_status = listen(sockert_file_descriptor, 5);
     if (connection_status == -1)
     {
@@ -363,11 +348,9 @@ auto Server::main_loop(Application* app) -> void
 
 Server::Server(Application* app) : _app(app)
 {
-    //   recvbuf = new char[DEFAULT_BUFLEN];
 }
 Server::~Server()
 {
-    //   delete[] recvbuf;
 }
 
 auto Server::run() -> void
