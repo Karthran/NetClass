@@ -17,14 +17,13 @@ public:
     auto setBufferSize(size_t size)  -> void;
 
 private:
-    volatile bool out_message_ready{false};
-    volatile bool in_message_ready{false};
-    volatile bool server_error{false};
-    char* recvbuf{nullptr};
-    std::string message{};
-    volatile size_t buffer_size{DEFAULT_BUFLEN};
-    volatile bool need_buffer_resize{true};
-    size_t message_length{0};
+    volatile bool _out_message_ready{false};
+    volatile bool _in_message_ready{false};
+    volatile bool _server_error{false};
+    char* _exchange_buffer{nullptr};
+    volatile size_t _exchange_buffer_size{DEFAULT_BUFLEN};
+    volatile bool _need_exchange_buffer_resize{true};
+    size_t _message_length{0};
 
     auto client_thread() -> int;
 };
