@@ -232,7 +232,7 @@ auto Client::client_thread() -> int
         ssize_t length = read(socket_file_descriptor, _exchange_buffer.get(), current_buffer_size);
         if (length > 0)
         {
-            in_message_ready = true;
+            _in_message_ready = true;
         }
     }
 

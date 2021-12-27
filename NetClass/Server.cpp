@@ -308,9 +308,9 @@ auto Server::server_thread() -> int
             std::cout << "Server is unable to accept the data from client.!" << std::endl;
             exit(1);
         }
-        clients.emplace_back(&Server::client_loop, this, thread_count, connection);
+        _clients.emplace_back(&Server::client_loop, this, thread_count, connection);
         ++thread_count;
-        clients.back().detach();
+        _clients.back().detach();
     }
     close(sockert_file_descriptor);
 

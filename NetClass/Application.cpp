@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include <exception>
+#include <cstring>
 
 #include "Application.h"
 #include "Server.h"
