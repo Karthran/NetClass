@@ -163,7 +163,7 @@ auto Server::server_thread(int thread_number) -> void
             {
             }
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));  // NEED
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));  // NEED
 
             // Echo the buffer back to the sender
             iSendResult = send(ClientSocket, _exchange_message[thread_number].get(), _exchange_message_size[thread_number], 0);
@@ -225,8 +225,6 @@ auto Server::client_loop(int thread_number, int connection) -> void
 
     size_t current_buffer_size{0};
 
-    // Communication Establishment
-    std::string message{};
     while (1)
     {
         if (_need_buffer_resize[thread_number])
@@ -253,7 +251,7 @@ auto Server::client_loop(int thread_number, int connection) -> void
         {
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));  // NEED
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));  // NEED
         
         ssize_t bytes = write(connection, _exchange_message[thread_number].get(), _exchange_message_size[thread_number]);
         if (bytes >= 0)
