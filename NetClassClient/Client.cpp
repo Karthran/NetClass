@@ -270,7 +270,7 @@ auto Client::setInMessageReady(bool flag) -> void
     _in_message_ready = flag;
 }
 
-auto Client::getMessage() -> const char*
+auto Client::getMessage() -> char*
 {
     return _exchange_buffer.get();
 }

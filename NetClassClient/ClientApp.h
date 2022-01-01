@@ -12,7 +12,7 @@ public:
 
     auto run() -> void;
     //   auto sendToServer(std::string& message, OperationCode operation_code) const -> void;
-    auto sendToServer(const char* message, size_t message_length, OperationCode operation_code) -> void;
+    auto sendToServer(const char* message, size_t message_length, OperationCode operation_code) -> const char*;
 
 private:
     Client* _client{nullptr};
@@ -21,7 +21,7 @@ private:
     size_t _current_msg_length{0};
     auto loop() -> void;
     // auto talkToServer(const std::string& message) const -> const std::string&;
-    auto talkToServer(const char* message, size_t msg_length) const -> const char*;
+    auto talkToServer(const char* message, size_t msg_length) const -> char*;
 
     auto addToBuffer(char* buffer, size_t& cur_msg_len, int value)const -> void;
     auto addToBuffer(char* buffer, size_t& cur_msg_len, const char* string, size_t str_len)const -> void;

@@ -1,13 +1,25 @@
 #include <iostream>
 #include <sstream>
 #include <exception>
+#include <memory>
 #include <cstring>
 
 #include "Application.h"
 #include "Server.h"
 #include "../core.h"
+
+#ifdef _WIN32
+//#include <cstdio>
+//#include <windows.h>
+#pragma execution_character_set("utf-8")
+#endif
+
 auto Application::run() -> void
 {
+    _data_base = std::make_unique<DataBase>("localhost", "root", "rksm", "testdb", 0);
+    _data_base->init();
+    _data_base->connect();
+
     _server = new Server(this);
     _server->run();
 
@@ -21,6 +33,7 @@ auto Application::run() -> void
             break;
         }
     }
+    delete _server;
 }
 
 auto Application::reaction(char* message, int thread_num) -> void
@@ -100,19 +113,22 @@ auto Application::onError(char* message, int thread_num) const -> void
 
 auto Application::checkName(char* name, size_t name_size, int thread_num) -> void
 {
-    const char* check_name = "Jhon";
-    auto flag{true};
-    for (auto i{0}; i < strlen(check_name); ++i)
-    {
-        if (check_name[i] != name[i])
-        {
-            flag = false;
-            break;
-        }
-    }
-    if (strlen(check_name) != name_size) flag = false;
+    // const char* check_name = "Иван";
+    std::cout << " check_name " << std::endl;
+
+    name[name_size] = '\0';
+    std::string query_str = "SELECT id FROM table_fromCplusplus WHERE name = '" + std::string(name) + "'";
+
+    std::string query_result{};
+    int row_num{0};
+    int column_num{0};
+
+    _data_base->query(query_str.c_str());
+    query_result.reserve(1024);
+    _data_base->getQueryResult(query_result, row_num, column_num);
+
     const char* result{nullptr};
-    if (flag)
+    if (!row_num)
         result = "OK";
     else
         result = "ERROR";

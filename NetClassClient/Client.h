@@ -12,7 +12,7 @@ public:
     auto setOutMessageReady(bool flag) -> void;
     auto getInMessageReady()const -> bool;
     auto setInMessageReady(bool flag) -> void;
-    auto getMessage() -> const char*;
+    auto getMessage() -> char*;
     auto setMessage(const char* msg, size_t msg_length) -> void;
     auto getServerError()const -> bool;
     auto setBufferSize(size_t size)  -> void;

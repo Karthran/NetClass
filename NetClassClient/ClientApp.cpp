@@ -5,6 +5,12 @@
 #include "Client.h"
 #include "../core.h"
 
+#ifdef _WIN32
+#include <cstdio>
+#include <windows.h>
+#pragma execution_character_set("utf-8")
+#endif
+
 ClientApp::ClientApp() : _msg_buffer_size (DEFAULT_BUFLEN)
 {
     _msg_buffer = new char[DEFAULT_BUFLEN];
@@ -22,7 +28,7 @@ auto ClientApp::run() -> void
 }
 
 //auto ClientApp::sendToServer(std::string& message, OperationCode operation_code) const -> void
-auto ClientApp::sendToServer(const char* message, size_t message_length, OperationCode operation_code) -> void
+auto ClientApp::sendToServer(const char* message, size_t message_length, OperationCode operation_code) -> const char*
 {
     if (_msg_buffer_size < message_length + HEADER_SIZE)
     {
@@ -67,15 +73,17 @@ auto ClientApp::sendToServer(const char* message, size_t message_length, Operati
 
    receive_buf = talkToServer(_msg_buffer, _current_msg_length);
 
-   char* str_ptr = new char[message_size + 1];
+   //char* str_ptr = new char[message_size + 1];
 
-   getFromBuffer(receive_buf, 0, str_ptr, message_size);
+   //getFromBuffer(receive_buf, 0, str_ptr, message_size);
 
-   str_ptr[message_size] = '\0';
+   receive_buf[message_size] = '\0';
 
-   std::cout << str_ptr << std::endl;
+   return receive_buf;
 
-   delete[] str_ptr;
+//   std::cout << str_ptr << std::endl;
+
+ //  delete[] str_ptr;
 
     //addToBuffer(_msg_buffer, _current_msg_length, message, message_length);
 
@@ -98,7 +106,7 @@ auto ClientApp::sendToServer(const char* message, size_t message_length, Operati
 }
 
 //auto ClientApp::talkToServer(const std::string& message) const -> const std::string& 
-auto ClientApp::talkToServer(const char* message, size_t msg_length) const -> const char*
+auto ClientApp::talkToServer(const char* message, size_t msg_length) const -> char*
 {
     while (_client->getOutMessageReady())
     {
@@ -158,14 +166,30 @@ auto ClientApp::getFromBuffer(const char* buffer, size_t shift, char* string, si
     }
 }
 
+#define MAX_INPUT_LENGTH 255
+
 auto ClientApp::loop() -> void
 {
-    std::string message;
+ //   SetConsoleOutputCP(CP_UTF8);  // UTF8
+//    SetConsoleCP(CP_UTF8);
+
     bool loop_flag = true;
     while (loop_flag)
     {
+#ifdef _WIN32
+        wchar_t wstr[MAX_INPUT_LENGTH];
+        char mb_str[MAX_INPUT_LENGTH * 3 + 1];
+        unsigned long read;
+        void* con = GetStdHandle(STD_INPUT_HANDLE);
+        ReadConsole(con, wstr, MAX_INPUT_LENGTH, &read, NULL);
+        int size1 = WideCharToMultiByte(CP_UTF8, 0, wstr, read, mb_str, sizeof(mb_str), NULL, NULL);
+        mb_str[size1 - 2] = '\0';
+#elif defined __linux__
+        std::string message;
         std::getline(std::cin, message);
-        if (message == "end")
+        const char* mb_str = message.c_str();
+#endif  // 
+        if (!strcmp(mb_str, "end"))
         {
             char stop[4];
             size_t size{0};
@@ -175,9 +199,9 @@ auto ClientApp::loop() -> void
             loop_flag = false;
             break;
         }
-        sendToServer(message.c_str(),message.size(), OperationCode::CHECK_NAME);
+        auto msg{sendToServer(mb_str, strlen(mb_str), OperationCode::CHECK_NAME)};
 
-        std::cout << message << std::endl;
+        std::cout << msg << std::endl;
     }
     std::cout << "Client stop!" << std::endl;
 

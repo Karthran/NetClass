@@ -1,5 +1,8 @@
 #pragma once
+#include "DataBase.h"
+
 class Server;
+class DataBase;
 class Application
 {
 public:
@@ -8,6 +11,7 @@ public:
 
 private:
     Server* _server{nullptr};
+    std::unique_ptr<DataBase> _data_base{nullptr};
 
     auto onCheckSize(char* message, int thread_num) const -> void;
     auto onCheckName(char* message, int thread_num) -> void;
