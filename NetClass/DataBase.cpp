@@ -20,7 +20,7 @@ auto DataBase::init() -> void
 
 auto DataBase::connect() -> void
 {  // Подключаемся к серверу
-    if (!mysql_real_connect(_mysql, "localhost", "root", "rksm", "testdb", 0, NULL, 0))
+    if (!mysql_real_connect(_mysql, _server, _user, _password, _database, _port, NULL, 0))
     {
         // Если нет возможности установить соединение с БД выводим сообщение об ошибке
         std::cout << "Error: can't connect to database " << mysql_error(_mysql) << std::endl;
