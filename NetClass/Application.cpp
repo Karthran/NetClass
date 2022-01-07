@@ -6,6 +6,7 @@
 
 #include "Application.h"
 #include "Server.h"
+
 #include "../core.h"
 
 #ifdef _WIN32
@@ -87,6 +88,7 @@ auto Application::onCheckName(char* message, int thread_num) -> void
         case OperationCode::CHECK_SIZE:
         {
             checkName(message + 2 * sizeof(int), _server->getMsgFromClientSize(thread_num), thread_num);
+            _server->setBufferSize(thread_num, _server->getCashMessageSizeRef(thread_num));
             _server->getMessageSizeRef(thread_num) = 0;
             addToBuffer(message, _server->getMessageSizeRef(thread_num), static_cast<int>(OperationCode::CHECK_SIZE));
             addToBuffer(message, _server->getMessageSizeRef(thread_num), _server->getCashMessageSizeRef(thread_num));

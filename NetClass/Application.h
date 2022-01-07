@@ -1,6 +1,6 @@
 #pragma once
-#include "DataBase.h"
 #include <memory>
+#include "DataBase.h"
 
 class Server;
 class DataBase;
